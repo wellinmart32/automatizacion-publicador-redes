@@ -226,15 +226,41 @@ class GestorLicencias:
                 'developer_permanente': False
             }
 
-    def registrar_instalacion(self, email):
+    def obtener_uuid_dispositivo(self):
+        """Genera un UUID único y estable basado en el hardware del dispositivo"""
+        import hashlib
+        import socket
+        import uuid as uuid_mod
+        try:
+            nombre_pc = socket.gethostname()
+            usuario_win = os.environ.get('USERNAME', 'unknown')
+            mac = ':'.join(['{:02x}'.format((uuid_mod.getnode() >> i) & 0xff)
+                           for i in range(0, 48, 8)][::-1])
+            identificador = f"{nombre_pc}_{usuario_win}_{mac}_{self.nombre_app}"
+            return hashlib.sha256(identificador.encode()).hexdigest()[:32]
+        except Exception:
+            archivo_uuid = self.carpeta_config / 'device.uuid'
+            if archivo_uuid.exists():
+                return archivo_uuid.read_text().strip()
+            nuevo_uuid = str(uuid_mod.uuid4()).replace('-', '')[:32]
+            self.carpeta_config.mkdir(parents=True, exist_ok=True)
+            archivo_uuid.write_text(nuevo_uuid)
+            return nuevo_uuid
+
+    def registrar_instalacion(self, email=None):
         """Registra la instalación y obtiene código TRIAL"""
         try:
-            url = self.url_backend.replace('/verificar-licencia', '/registrar-instalacion')
-            payload = {
-                'email': email,
-                'nombreApp': self.nombre_app
-            }
-            response = requests.post(url, json=payload, timeout=30, verify=False)
+            device_uuid = self.obtener_uuid_dispositivo()
+            payload = {'deviceUuid': device_uuid, 'nombreApp': self.nombre_app}
+            if email:
+                payload['email'] = email
+            response = requests.post(
+                self.url_backend.replace('/verificar-licencia', '/registrar-instalacion'),
+                json=payload,
+                headers={'Content-Type': 'application/json'},
+                timeout=30,
+                verify=False
+            )
             if response.status_code == 200:
                 datos = response.json()
                 codigo = datos.get('codigo')
