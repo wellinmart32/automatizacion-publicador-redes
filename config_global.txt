@@ -1,0 +1,44 @@
+# ============================================================
+# CONFIGURACIÓN GLOBAL - PUBLICADOR REDES
+# ============================================================
+
+[GENERAL]
+nombre_proyecto = Publicador Redes
+carpeta_anuncios = anuncios
+navegador = firefox
+modo_debug = si
+
+[ANUNCIOS]
+seleccion = secuencial
+historial_evitar_repetir = 5
+agregar_hashtags = no
+hashtags = #Marketing,#Publicidad,#Negocios
+agregar_firma = no
+texto_firma = Publicado automáticamente
+
+[PUBLICACION]
+tiempo_entre_intentos = 3
+max_intentos_por_publicacion = 3
+espera_despues_publicar = 5
+verificar_publicacion_exitosa = si
+espera_estabilizacion_modal = 3
+
+[NAVEGADOR]
+usar_perfil_existente = si
+carpeta_perfil_custom = perfiles/facebook_publicador
+desactivar_notificaciones = si
+maximizar_ventana = si
+
+[LIMITES]
+tiempo_minimo_entre_publicaciones_segundos = 120
+permitir_duplicados = no
+permitir_forzar_publicacion_manual = si
+
+[MODULOS]
+publicar_facebook = si
+publicar_instagram = no
+publicar_twitter = no
+publicar_linkedin = no
+
+[DEBUG]
+modo_debug = detallado
