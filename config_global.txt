@@ -25,7 +25,7 @@ espera_estabilizacion_modal = 3
 
 [NAVEGADOR]
 usar_perfil_existente = si
-carpeta_perfil_custom = perfiles/facebook_publicador
+carpeta_perfil_custom = perfiles/publicador_redes
 desactivar_notificaciones = si
 maximizar_ventana = si
 
@@ -42,3 +42,4 @@ publicar_linkedin = no
 
 [DEBUG]
 modo_debug = detallado
+
