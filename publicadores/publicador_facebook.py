@@ -102,11 +102,10 @@ class PublicadorFacebook:
             if not self.driver:
                 self._iniciar_navegador()
 
-            print("📘 Abriendo Facebook...")
-            self.driver.get("https://www.facebook.com")
-            time.sleep(3)
-
-            self._manejar_puzzle()
+            # Verificar sesión antes de publicar
+            if not self.verificar_sesion_facebook():
+                print("❌ No se pudo verificar la sesión de Facebook")
+                return False
 
             # Buscar área de publicación
             print("   Buscando área de publicación...")
