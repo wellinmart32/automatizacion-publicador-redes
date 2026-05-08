@@ -4,26 +4,45 @@ import json
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# ── Colores ANSI ──────────────────────────────────────────────
+V  = '\033[92m'   # verde
+R  = '\033[91m'   # rojo
+A  = '\033[93m'   # amarillo
+C  = '\033[96m'   # cian
+N  = '\033[1m'    # negrita
+X  = '\033[0m'    # reset
+# ─────────────────────────────────────────────────────────────
+
 from compartido.gestor_archivos import leer_config_global, verificar_y_crear_estructura, obtener_anuncio
 from gestor_licencias import GestorLicencias
 from gestor_registro import GestorRegistro
 
 
-def _ocultar_consola():
-    """Oculta la consola en Windows si se ejecuta con doble clic"""
-    pass
-
-
-def _abrir_consola():
-    """Muestra la consola para ver el progreso"""
-    pass
-
-
 def mostrar_banner():
     """Muestra el banner de inicio"""
-    print("\n" + "="*60)
-    print("  🟣 PUBLICADOR REDES — AutomaPro")
-    print("="*60 + "\n")
+    print(f"\n{N}{C}" + "="*70 + X)
+    print(f"{N}{C}" + " " * 18 + "🟣 PUBLICADOR REDES — AutomaPro" + X)
+    print(f"{N}{C}" + "="*70 + X + "\n")
+
+
+def mostrar_configuracion(config):
+    """Muestra la configuración activa del sistema"""
+    print("📁 Verificando estructura...")
+    verificar_y_crear_estructura()
+    print()
+    print("⚙️  CONFIGURACIÓN DEL SISTEMA:")
+    print(f"   📁 Carpeta anuncios: {config['carpeta_anuncios']}")
+    print(f"   🌐 Navegador: {config['navegador'].upper()}")
+    print(f"   🎲 Selección: {config['seleccion'].capitalize()}")
+    print(f"   💾 Memoria: Últimos {config['historial_evitar_repetir']} anuncios")
+    print(f"   🔄 Máx. intentos: {config['max_intentos_por_publicacion']}")
+    print()
+    print("📱 MÓDULOS ACTIVOS:")
+    print(f"   📘 Facebook:   {'✅ Sí' if config.get('modulo_facebook') else '⛔ No'}")
+    print(f"   📸 Instagram:  {'✅ Sí' if config.get('modulo_instagram') else '⛔ No'}")
+    print(f"   🐦 Twitter/X:  {'✅ Sí' if config.get('modulo_twitter') else '⛔ No'}")
+    print(f"   💼 LinkedIn:   {'✅ Sí' if config.get('modulo_linkedin') else '⛔ No'}")
+    print()
 
 
 def _verificar_wizard_completado():
@@ -34,7 +53,6 @@ def _verificar_wizard_completado():
         config_path = gestor.archivo_config
         tiene_configuracion = False
         if config_path.exists():
-            import json
             with open(config_path, 'r', encoding='utf-8') as f:
                 datos = json.load(f)
                 if datos.get('codigo_licencia'):
@@ -58,61 +76,73 @@ def main():
     """Función principal del publicador"""
     mostrar_banner()
 
-    # Verificar estructura de carpetas
-    verificar_y_crear_estructura()
-
-    # Leer configuración
+    # Verificar estructura de carpetas y mostrar configuración
     try:
         config = leer_config_global()
     except Exception as e:
-        print(f"❌ Error leyendo configuración: {e}")
+        print(f"{R}❌ Error leyendo configuración: {e}{X}")
         return
+
+    mostrar_configuracion(config)
 
     # Verificar licencia
     gestor_lic = GestorLicencias("PublicadorRedes")
     codigo = gestor_lic.obtener_codigo_guardado()
     if not codigo:
-        print("❌ No hay código de licencia configurado")
+        print(f"{R}❌ No hay código de licencia configurado{X}")
         return
 
     estado_licencia = gestor_lic.verificar_licencia(codigo, mostrar_mensajes=True)
     if not estado_licencia['valida']:
-        print("❌ Licencia inválida o expirada")
+        print(f"{R}❌ Licencia inválida o expirada{X}")
         print("   Visita: automapro-frontend.vercel.app")
         return
 
     es_full = estado_licencia.get('tipo') in ['FULL', 'MASTER'] or estado_licencia.get('developer_permanente')
 
     if es_full:
-        print("✅ Licencia Completa activada — todas las funciones desbloqueadas")
+        print(f"{V}✅ Licencia Completa activada — todas las funciones desbloqueadas{X}\n")
     else:
         dias = estado_licencia.get('diasRestantes', 0)
-        print(f"⚠️  Versión de Prueba — {dias} días restantes")
-        print("   Funciones limitadas: solo texto, solo Facebook, 1 publicación/día, 5 solicitudes/día")
+        print(f"{A}⚠️  Versión de Prueba — {dias} días restantes{X}")
+        print("   Funciones limitadas: solo texto, solo Facebook\n")
 
     # Gestor de registro
     gestor_reg = GestorRegistro()
+    gestor_reg.mostrar_estadisticas()
 
     # Obtener anuncio
-    registro = {'historial': []}
+    registro = gestor_reg._leer_registro()
     texto, anuncio_dir, imagenes, videos = obtener_anuncio(registro)
 
     if not texto and not imagenes and not videos:
-        print("❌ No hay anuncios disponibles")
+        print(f"{R}❌ No hay anuncios disponibles{X}")
         print("   Agrega anuncios en la carpeta 'anuncios/'")
         return
 
-    print(f"\n📢 Anuncio seleccionado: {anuncio_dir}")
+    print(f"\n{N}📢 Anuncio seleccionado: {anuncio_dir}{X}")
     if texto:
         print(f"   Texto: {texto[:50]}..." if len(texto) > 50 else f"   Texto: {texto}")
     print(f"   Imágenes: {len(imagenes)}")
     print(f"   Videos: {len(videos)}")
 
+    # Countdown automático
+    print(f"\n⏳ Iniciando en 3 segundos... (Ctrl+C para cancelar)\n")
+    try:
+        for i in range(3, 0, -1):
+            print(f"   {i}...", end='\r', flush=True)
+            import time
+            time.sleep(1)
+        print("   ✅ ¡Iniciando!\n")
+    except KeyboardInterrupt:
+        print(f"\n\n{R}❌ Proceso cancelado por el usuario{X}\n")
+        return
+
     # Publicar en plataformas activas
     resultados = {}
 
     if config.get('modulo_facebook'):
-        print("\n📘 Publicando en Facebook...")
+        print(f"\n{N}{C}📘 Publicando en Facebook...{X}")
         from publicadores.publicador_facebook import PublicadorFacebook
         pub = PublicadorFacebook(config, es_full=es_full)
         exito = pub.publicar(texto, imagenes if es_full else None, videos if es_full else None)
@@ -121,10 +151,10 @@ def main():
             gestor_reg.registrar_publicacion_exitosa('facebook', 'anuncio', anuncio_dir)
         else:
             gestor_reg.registrar_error('facebook', 'publicacion', 'Falló la publicación')
-        pub._cerrar_navegador()
+        pub.cerrar_navegador()
 
     if config.get('modulo_instagram') and es_full:
-        print("\n📷 Publicando en Instagram...")
+        print(f"\n{N}{C}📸 Publicando en Instagram...{X}")
         from publicadores.publicador_instagram import PublicadorInstagram
         pub = PublicadorInstagram(config, es_full=es_full)
         exito = pub.publicar(texto, imagenes, videos)
@@ -133,10 +163,10 @@ def main():
             gestor_reg.registrar_publicacion_exitosa('instagram', 'anuncio', anuncio_dir)
         else:
             gestor_reg.registrar_error('instagram', 'publicacion', 'Falló la publicación')
-        pub._cerrar_navegador()
+        pub.cerrar_navegador()
 
     if config.get('modulo_twitter') and es_full:
-        print("\n🐦 Publicando en Twitter/X...")
+        print(f"\n{N}{C}🐦 Publicando en Twitter/X...{X}")
         from publicadores.publicador_twitter import PublicadorTwitter
         pub = PublicadorTwitter(config, es_full=es_full)
         exito = pub.publicar(texto, imagenes, videos)
@@ -145,10 +175,10 @@ def main():
             gestor_reg.registrar_publicacion_exitosa('twitter', 'anuncio', anuncio_dir)
         else:
             gestor_reg.registrar_error('twitter', 'publicacion', 'Falló la publicación')
-        pub._cerrar_navegador()
+        pub.cerrar_navegador()
 
     if config.get('modulo_linkedin') and es_full:
-        print("\n💼 Publicando en LinkedIn...")
+        print(f"\n{N}{C}💼 Publicando en LinkedIn...{X}")
         from publicadores.publicador_linkedin import PublicadorLinkedIn
         pub = PublicadorLinkedIn(config, es_full=es_full)
         exito = pub.publicar(texto, imagenes, videos)
@@ -157,15 +187,16 @@ def main():
             gestor_reg.registrar_publicacion_exitosa('linkedin', 'anuncio', anuncio_dir)
         else:
             gestor_reg.registrar_error('linkedin', 'publicacion', 'Falló la publicación')
-        pub._cerrar_navegador()
+        pub.cerrar_navegador()
 
-    # Resumen
-    print("\n" + "="*60)
-    print("📊 RESUMEN:")
+    # Resumen final
+    print(f"\n{N}" + "="*70 + X)
+    print(f"{N}📊 RESUMEN DE PUBLICACIONES{X}")
+    print(f"{N}" + "="*70 + X)
     for plataforma, exito in resultados.items():
-        estado = "✅ Exitoso" if exito else "❌ Fallido"
+        estado = f"{V}✅ Exitoso{X}" if exito else f"{R}❌ Fallido{X}"
         print(f"   {plataforma.capitalize()}: {estado}")
-    print("="*60 + "\n")
+    print(f"{N}" + "="*70 + X + "\n")
 
 
 if __name__ == "__main__":
@@ -174,9 +205,9 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n❌ Proceso cancelado por el usuario\n")
+        print(f"\n\n{R}❌ Proceso cancelado por el usuario{X}\n")
         sys.exit(0)
     except Exception as e:
         import traceback
-        print(f"\n❌ Error inesperado: {e}")
+        print(f"\n{R}❌ Error inesperado: {e}{X}")
         traceback.print_exc()

@@ -48,11 +48,13 @@ class PublicadorLinkedIn:
 
         return self.driver
 
-    def _cerrar_navegador(self):
+    def cerrar_navegador(self):
         """Cierra el navegador"""
         if self.driver:
+            print(f"\n🔒 Cerrando navegador...")
             try:
                 self.driver.quit()
+                print(f"   ✅ Navegador cerrado")
             except Exception:
                 pass
             self.driver = None
