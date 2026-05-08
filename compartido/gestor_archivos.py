@@ -147,7 +147,34 @@ def verificar_y_crear_estructura():
             os.makedirs(carpeta)
             print(f"✅ Carpeta creada: {carpeta}")
 
+    # Crear anuncio de ejemplo si no existe ninguno
+    carpeta_anuncios = os.path.join(base, config['carpeta_anuncios'])
+    anuncios_existentes = [
+        d for d in os.listdir(carpeta_anuncios)
+        if os.path.isdir(os.path.join(carpeta_anuncios, d))
+        and d.startswith('anuncio_')
+    ] if os.path.exists(carpeta_anuncios) else []
+
+    if not anuncios_existentes:
+        print("📢 No hay anuncios. Creando anuncio de ejemplo...")
+        _crear_anuncio_ejemplo(carpeta_anuncios)
+
     return True
+
+
+def _crear_anuncio_ejemplo(carpeta_anuncios):
+    """Crea un anuncio de ejemplo con estructura completa"""
+    ruta = os.path.join(carpeta_anuncios, 'anuncio_001')
+    os.makedirs(os.path.join(ruta, 'imagenes'), exist_ok=True)
+    os.makedirs(os.path.join(ruta, 'videos'), exist_ok=True)
+
+    with open(os.path.join(ruta, 'datos.txt'), 'w', encoding='utf-8') as f:
+        f.write("[ANUNCIO]\n")
+        f.write("texto = 🎉 ¡Oferta especial esta semana! Visita nuestro negocio y descubre increíbles productos al mejor precio. ¡No te lo pierdas!\n")
+        f.write("plataformas = facebook\n")
+        f.write("estado = pendiente\n")
+
+    print("✅ anuncio_001 creado con texto de ejemplo")
 
 
 def obtener_anuncio(registro_publicaciones):
@@ -187,12 +214,17 @@ def obtener_anuncio(registro_publicaciones):
 
     ruta_anuncio = os.path.join(carpeta, anuncio_dir)
 
-    # Leer texto del anuncio
+    # Leer texto del anuncio desde datos.txt (formato configparser)
     texto = None
-    archivo_texto = os.path.join(ruta_anuncio, 'texto.txt')
-    if os.path.exists(archivo_texto):
-        with open(archivo_texto, 'r', encoding='utf-8') as f:
-            texto = f.read().strip()
+    archivo_datos = os.path.join(ruta_anuncio, 'datos.txt')
+    if os.path.exists(archivo_datos):
+        try:
+            cfg_anuncio = configparser.RawConfigParser(delimiters=('=',))
+            cfg_anuncio.read(archivo_datos, encoding='utf-8')
+            if cfg_anuncio.has_option('ANUNCIO', 'texto'):
+                texto = cfg_anuncio['ANUNCIO']['texto'].strip()
+        except Exception as e:
+            print(f"   ⚠️  Error leyendo datos.txt: {e}")
 
     # Aplicar hashtags y firma
     if texto:
@@ -201,18 +233,20 @@ def obtener_anuncio(registro_publicaciones):
         if config['agregar_firma'] and config['texto_firma']:
             texto += f"\n\n{config['texto_firma']}"
 
-    # Obtener imágenes
+    # Obtener imágenes desde subcarpeta imagenes/
     imagenes = []
-    for ext in ['.jpg', '.jpeg', '.png', '.webp']:
-        imagenes += [os.path.join(ruta_anuncio, f)
-                     for f in os.listdir(ruta_anuncio)
-                     if f.lower().endswith(ext)]
+    carpeta_imagenes = os.path.join(ruta_anuncio, 'imagenes')
+    if os.path.exists(carpeta_imagenes):
+        for f in sorted(os.listdir(carpeta_imagenes)):
+            if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                imagenes.append(os.path.join(carpeta_imagenes, f))
 
-    # Obtener videos
+    # Obtener videos desde subcarpeta videos/
     videos = []
-    for ext in ['.mp4', '.avi', '.mov']:
-        videos += [os.path.join(ruta_anuncio, f)
-                   for f in os.listdir(ruta_anuncio)
-                   if f.lower().endswith(ext)]
+    carpeta_videos = os.path.join(ruta_anuncio, 'videos')
+    if os.path.exists(carpeta_videos):
+        for f in sorted(os.listdir(carpeta_videos)):
+            if f.lower().endswith(('.mp4', '.avi', '.mov')):
+                videos.append(os.path.join(carpeta_videos, f))
 
     return texto, anuncio_dir, imagenes, videos
