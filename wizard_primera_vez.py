@@ -154,7 +154,10 @@ class WizardPrimeraVez:
 
         self.btn_verificar_email = tk.Button(frame_email, text="Verificar",
                                              font=("Segoe UI", 9, "bold"),
-                                             bg=COLOR_PRINCIPAL, fg="white",
+                                             bg="#5b21b6", fg="white",
+                                             padx=10, pady=4,
+                                             relief='raised', borderwidth=2,
+                                             cursor="hand2",
                                              command=self._verificar_email_wizard)
         self.btn_verificar_email.pack(side='left')
 
@@ -180,8 +183,9 @@ class WizardPrimeraVez:
 
         tk.Button(frame_btn, text="◀️ Atrás", font=("Segoe UI", 10),
                   bg="#e0e0e0", width=12, command=self._anterior).pack(side='left', padx=(40, 10))
-        tk.Button(frame_btn, text="🆓 Usar Prueba", font=("Segoe UI", 10),
-                  bg="#e65100", fg="white", width=12, command=self._usar_trial).pack(side='left', padx=(0, 10))
+        tk.Button(frame_btn, text="Usar Prueba", font=("Segoe UI", 10),
+                  bg="#e65100", fg="white", width=13, padx=5,
+                  cursor="hand2", command=self._usar_trial).pack(side='left', padx=(0, 10))
         tk.Button(frame_btn, text="Siguiente ▶️", font=("Segoe UI", 10, "bold"),
                   bg="#28a745", fg="white", width=12, command=self._validar_licencia).pack(side='right', padx=(10, 40))
 
