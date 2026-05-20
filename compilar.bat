@@ -42,6 +42,10 @@ echo [6/6] Compilando GestorTareasRedes.exe...
 %PYINSTALLER% %FLAGS% %DATOS_BASE% --icon=iconos/calendar.ico --name GestorTareasRedes gestor_tareas_gui.py
 echo.
 
+echo Copiando archivos de configuracion a dist\...
+copy config_global.txt dist\config_global.txt >nul
+copy version.txt dist\version.txt >nul
+
 echo ============================================================
 echo  COMPILACION COMPLETADA
 echo  Los .exe estan en la carpeta: dist\

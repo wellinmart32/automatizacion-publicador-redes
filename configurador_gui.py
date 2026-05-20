@@ -86,6 +86,11 @@ class ConfiguradorGUI:
     def _guardar_config(self):
         """Guarda todos los cambios en config_global.txt"""
         try:
+            # Crear secciones si no existen
+            for seccion in ['GENERAL', 'ANUNCIOS', 'PUBLICACION', 'NAVEGADOR', 'LIMITES', 'MODULOS']:
+                if not self.config.has_section(seccion):
+                    self.config.add_section(seccion)
+
             # [GENERAL]
             self.config['GENERAL']['navegador'] = self.var_navegador.get()
 
