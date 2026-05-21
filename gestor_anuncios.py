@@ -410,6 +410,7 @@ class GestorAnuncios:
                 config = configparser.ConfigParser()
                 config.read(archivo_texto, encoding='utf-8')
                 texto = config.get('ANUNCIO', 'texto', fallback='') if config.has_section('ANUNCIO') else ''
+                texto = texto.replace('\\n', '\n')
                 self.texto.insert('1.0', texto)
 
                 # Cargar plataformas
@@ -546,9 +547,10 @@ class GestorAnuncios:
             return
 
         try:
+            texto_guardado = texto.replace('\n', '\\n')
             with open(archivo_datos, 'w', encoding='utf-8') as f:
                 f.write("[ANUNCIO]\n")
-                f.write(f"texto = {texto}\n")
+                f.write(f"texto = {texto_guardado}\n")
                 f.write(f"plataformas = {','.join(plataformas)}\n")
                 f.write("estado = pendiente\n")
 

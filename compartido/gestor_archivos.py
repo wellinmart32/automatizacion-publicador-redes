@@ -222,7 +222,7 @@ def obtener_anuncio(registro_publicaciones):
             cfg_anuncio = configparser.RawConfigParser(delimiters=('=',))
             cfg_anuncio.read(archivo_datos, encoding='utf-8')
             if cfg_anuncio.has_option('ANUNCIO', 'texto'):
-                texto = cfg_anuncio['ANUNCIO']['texto'].strip()
+                texto = cfg_anuncio['ANUNCIO']['texto'].strip().replace('\\n', '\n')
         except Exception as e:
             print(f"   ⚠️  Error leyendo datos.txt: {e}")
 
