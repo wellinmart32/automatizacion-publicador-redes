@@ -19,7 +19,7 @@ set FLAGS=--onefile --windowed --noconfirm
 
 echo.
 echo [1/6] Compilando PublicadorRedes.exe...
-%PYINSTALLER% %FLAGS% %DATOS_BASE% --add-data "publicadores;publicadores" --add-data "anuncios;anuncios" --icon=iconos/dashboard.ico --name PublicadorRedes publicar_redes.py
+%PYINSTALLER% --onefile --noconfirm %DATOS_BASE% --add-data "publicadores;publicadores" --add-data "anuncios;anuncios" --icon=iconos/dashboard.ico --name PublicadorRedes publicar_redes.py
 echo.
 
 echo [2/6] Compilando PanelControlRedes.exe...

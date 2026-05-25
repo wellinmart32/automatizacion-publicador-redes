@@ -75,8 +75,12 @@ class GestorTareasGUI:
         }
 
         self.dias_map_inverso = {
+            # Inglés
             'MON': 'L', 'TUE': 'M', 'WED': 'X',
-            'THU': 'J', 'FRI': 'V', 'SAT': 'S', 'SUN': 'D'
+            'THU': 'J', 'FRI': 'V', 'SAT': 'S', 'SUN': 'D',
+            # Español
+            'LUN': 'L', 'MAR': 'M', 'MI': 'X', 'MIÉ': 'X',
+            'JUE': 'J', 'VIE': 'V', 'SÁB': 'S', 'DOM': 'D'
         }
 
         self._construir_ui()
@@ -432,7 +436,14 @@ class GestorTareasGUI:
 
         checkboxes_dias = []
         for clave, label in dias_labels:
-            var = tk.BooleanVar(value=True if clave in ['L', 'M', 'X', 'J', 'V'] else False)
+            dias_actuales = []
+            if detalles:
+                dias_texto = self._extraer_dias_cortos(detalles)
+                if dias_texto and dias_texto not in ['Diario', 'N/A']:
+                    dias_actuales = [d.strip() for d in dias_texto.split(',')]
+            else:
+                dias_actuales = ['L', 'M', 'X', 'J', 'V']
+            var = tk.BooleanVar(value=clave in dias_actuales)
             dias_vars[clave] = var
             cb = tk.Checkbutton(
                 frame_dias, text=label, variable=var,
