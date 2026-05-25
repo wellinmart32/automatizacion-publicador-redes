@@ -393,7 +393,18 @@ class GestorTareasGUI:
         if detalles:
             for clave in detalles:
                 if 'hora' in clave.lower() or 'start time' in clave.lower():
-                    hora_actual = detalles[clave][:5]
+                    valor = detalles[clave]
+                    import re
+                    match = re.search(r'(\d{1,2}:\d{2})', valor)
+                    if match:
+                        hora_str = match.group(1)
+                        horas, minutos = hora_str.split(':')
+                        horas = int(horas)
+                        # Detectar PM y convertir a 24 horas
+                        es_pm = 'p. m.' in valor.lower() or 'pm' in valor.lower()
+                        if es_pm and horas < 12:
+                            horas += 12
+                        hora_actual = f'{horas:02d}:{minutos}'
                     break
         var_hora = tk.StringVar(value=hora_actual)
         tk.Entry(frame, textvariable=var_hora, width=10, font=("Segoe UI", 10)).pack(anchor='w', pady=(0, 12))
@@ -419,13 +430,24 @@ class GestorTareasGUI:
         dias_labels = [('L', 'Lun'), ('M', 'Mar'), ('X', 'Mié'), ('J', 'Jue'),
                        ('V', 'Vie'), ('S', 'Sáb'), ('D', 'Dom')]
 
+        checkboxes_dias = []
         for clave, label in dias_labels:
             var = tk.BooleanVar(value=True if clave in ['L', 'M', 'X', 'J', 'V'] else False)
             dias_vars[clave] = var
-            tk.Checkbutton(
+            cb = tk.Checkbutton(
                 frame_dias, text=label, variable=var,
                 bg="#f0f0f0", font=("Segoe UI", 9)
-            ).pack(side='left', padx=3)
+            )
+            cb.pack(side='left', padx=3)
+            checkboxes_dias.append(cb)
+
+        def _actualizar_dias(*args):
+            estado = 'normal' if var_freq.get() == 'WEEKLY' else 'disabled'
+            for cb in checkboxes_dias:
+                cb.config(state=estado)
+
+        var_freq.trace('w', _actualizar_dias)
+        _actualizar_dias()
 
         # Botones
         frame_btns = tk.Frame(ventana, bg="#f0f0f0", pady=10)
