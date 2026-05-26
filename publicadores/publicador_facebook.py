@@ -43,20 +43,33 @@ class PublicadorFacebook:
         else:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        options = FirefoxOptions()
+        navegador = self.config.get('navegador', 'firefox').lower()
 
-        if self.config.get('usar_perfil_existente') == 'si':
-            perfil_path = os.path.join(base_dir, self.config.get('carpeta_perfil_custom', 'perfiles/publicador_redes'))
-            os.makedirs(perfil_path, exist_ok=True)
-            options.add_argument('-profile')
-            options.add_argument(perfil_path)
-            print(f"   ✓ Perfil Firefox: {os.path.basename(perfil_path)}")
-
-        if self.config.get('desactivar_notificaciones'):
-            options.set_preference("dom.webnotifications.enabled", False)
-            options.set_preference("dom.push.enabled", False)
-
-        self.driver = webdriver.Firefox(options=options)
+        if navegador == 'chrome':
+            from selenium.webdriver.chrome.options import Options as ChromeOptions
+            options = ChromeOptions()
+            options.add_argument("--disable-blink-features=AutomationControlled")
+            options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            if self.config.get('usar_perfil_existente') == 'si':
+                perfil_path = os.path.join(base_dir, 'perfiles', 'facebook_chrome')
+                os.makedirs(perfil_path, exist_ok=True)
+                options.add_argument(f"--user-data-dir={perfil_path}")
+                print(f"   ✓ Perfil Chrome: facebook_chrome")
+            if self.config.get('desactivar_notificaciones'):
+                options.add_argument("--disable-notifications")
+            self.driver = webdriver.Chrome(options=options)
+        else:
+            options = FirefoxOptions()
+            if self.config.get('usar_perfil_existente') == 'si':
+                perfil_path = os.path.join(base_dir, self.config.get('carpeta_perfil_custom', 'perfiles/publicador_redes'))
+                os.makedirs(perfil_path, exist_ok=True)
+                options.add_argument('-profile')
+                options.add_argument(perfil_path)
+                print(f"   ✓ Perfil Firefox: {os.path.basename(perfil_path)}")
+            if self.config.get('desactivar_notificaciones'):
+                options.set_preference("dom.webnotifications.enabled", False)
+                options.set_preference("dom.push.enabled", False)
+            self.driver = webdriver.Firefox(options=options)
 
         if self.config.get('maximizar_ventana'):
             self.driver.maximize_window()
@@ -82,7 +95,7 @@ class PublicadorFacebook:
         try:
             url = self.driver.current_url
             # Solo detectar por URL — evitar falsos positivos por texto en página normal
-            return any(p in url for p in ['checkpoint', 'login/device-based', 'help/contact', 'login'])
+            return any(p in url for p in ['checkpoint', 'login/device-based', 'help/contact'])
         except Exception:
             return False
 
