@@ -332,11 +332,15 @@ class GestorTareasGUI:
         """Extrae los días de la tarea en formato corto (L,M,X...)"""
         try:
             for clave in detalles:
-                if 'día' in clave.lower() or 'day' in clave.lower():
+                if 'día' in clave.lower() or 'day' in clave.lower() or 'days' in clave.lower():
                     valor = detalles[clave]
+                    # Caso especial: todos los días de la semana
+                    if 'todos' in valor.lower() or 'all' in valor.lower() or 'every' in valor.lower():
+                        return 'L,M,X,J,V,S,D'
                     dias_en = [d.strip() for d in valor.split(',')]
                     dias_cortos = [self.dias_map_inverso.get(d, d) for d in dias_en]
-                    return ','.join(dias_cortos)
+                    resultado = ','.join([d for d in dias_cortos if len(d) == 1])
+                    return resultado if resultado else 'Diario'
             return 'Diario'
         except Exception:
             return 'N/A'

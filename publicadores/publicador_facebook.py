@@ -81,10 +81,8 @@ class PublicadorFacebook:
         """Detecta si Facebook muestra página de verificación de seguridad"""
         try:
             url = self.driver.current_url
-            if any(p in url for p in ['checkpoint', 'login/device-based', 'help/contact']):
-                return True
-            elementos = self.driver.find_elements(By.XPATH, "//*[contains(text(), 'verificar') or contains(text(), 'seguridad') or contains(text(), 'Verify')]")
-            return len(elementos) > 0
+            # Solo detectar por URL — evitar falsos positivos por texto en página normal
+            return any(p in url for p in ['checkpoint', 'login/device-based', 'help/contact', 'login'])
         except Exception:
             return False
 
