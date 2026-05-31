@@ -322,6 +322,18 @@ class PanelControl:
             frame.bind('<Button-1>', lambda e, a=accion: a())
             frame.bind('<Enter>', lambda e, f=frame: f.config(bg="#f3e8ff"))
             frame.bind('<Leave>', lambda e, f=frame: f.config(bg="white"))
+        # Forzar redibujado completo de la ventana
+        self.root.update_idletasks()
+        self.root.update()
+        self.root.after(100, self._refrescar_ventana)
+
+    def _refrescar_ventana(self):
+        """Fuerza un redibujado completo de la ventana"""
+        try:
+            self.root.withdraw()
+            self.root.after(50, self.root.deiconify)
+        except Exception:
+            pass
 
     def _lanzar_en_hilo(self, cmd):
         """Para subprocesos: bloquea grid, corre en hilo, desbloquea al terminar"""
