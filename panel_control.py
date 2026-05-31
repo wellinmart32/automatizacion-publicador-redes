@@ -278,18 +278,30 @@ class PanelControl:
         # Guardar referencias para bloquear/desbloquear
         frame._cmd = comando
         frame._en_hilo = en_hilo
+        frame._color = color
         widgets = [lbl_titulo, lbl_sub]
         self._botones_grid.append((frame, widgets))
 
         accion = (lambda c=comando: self._lanzar_en_hilo(c)) if en_hilo else comando
 
+        def _on_enter(e, f=frame, ws=widgets, c=color):
+            bg_h = "#f3e8ff" if c == "white" else c
+            f.config(bg=bg_h)
+            for w in ws:
+                w.config(bg=bg_h)
+
+        def _on_leave(e, f=frame, ws=widgets, c=color):
+            f.config(bg=c)
+            for w in ws:
+                w.config(bg=c)
+
         frame.bind('<Button-1>', lambda e, a=accion: a())
-        frame.bind('<Enter>', lambda e, f=frame, c=color: f.config(bg="#f3e8ff" if c == "white" else c))
-        frame.bind('<Leave>', lambda e, f=frame, c=color: f.config(bg=c))
+        frame.bind('<Enter>', _on_enter)
+        frame.bind('<Leave>', _on_leave)
         for w in widgets:
             w.bind('<Button-1>', lambda e, a=accion: a())
-            w.bind('<Enter>', lambda e, f=frame, c=color: f.config(bg="#f3e8ff" if c == "white" else c))
-            w.bind('<Leave>', lambda e, f=frame, c=color: f.config(bg=c))
+            w.bind('<Enter>', _on_enter)
+            w.bind('<Leave>', _on_leave)
 
     def _bloquear_grid(self):
         """Bloquea todos los botones del grid"""
@@ -309,19 +321,35 @@ class PanelControl:
         """Restaura todos los botones del grid"""
         self.root.config(cursor="")
         for frame, widgets in self._botones_grid:
-            frame.config(cursor="hand2", bg="white")
+            color_orig = getattr(frame, '_color', 'white')
+            bg_orig = color_orig if color_orig != "white" else "white"
+            frame.config(cursor="hand2", bg=bg_orig)
             cmd = frame._cmd
             en_hilo = frame._en_hilo
-            for w in widgets:
-                w.config(bg="white")
-                accion = (lambda c=cmd: self._lanzar_en_hilo(c)) if en_hilo else cmd
-                w.bind('<Button-1>', lambda e, a=accion: a())
-                w.bind('<Enter>', lambda e, f=frame: f.config(bg="#f3e8ff"))
-                w.bind('<Leave>', lambda e, f=frame: f.config(bg="white"))
             accion = (lambda c=cmd: self._lanzar_en_hilo(c)) if en_hilo else cmd
+
+            def _on_enter(e, f=frame, ws=widgets, c=color_orig):
+                bg_h = "#f3e8ff" if c == "white" else c
+                f.config(bg=bg_h)
+                for w in ws:
+                    w.config(bg=bg_h)
+
+            def _on_leave(e, f=frame, ws=widgets, c=color_orig):
+                f.config(bg=c)
+                for w in ws:
+                    w.config(bg=c)
+
+            for w in widgets:
+                w.config(bg=bg_orig)
+                w.bind('<Button-1>', lambda e, a=accion: a())
+                w.bind('<Enter>', _on_enter)
+                w.bind('<Leave>', _on_leave)
             frame.bind('<Button-1>', lambda e, a=accion: a())
-            frame.bind('<Enter>', lambda e, f=frame: f.config(bg="#f3e8ff"))
-            frame.bind('<Leave>', lambda e, f=frame: f.config(bg="white"))
+            frame.bind('<Enter>', _on_enter)
+            frame.bind('<Leave>', _on_leave)
+        self.root.update_idletasks()
+        self.root.update()
+        self.root.after(100, self._refrescar_ventana)
         # Forzar redibujado completo de la ventana
         self.root.update_idletasks()
         self.root.update()
