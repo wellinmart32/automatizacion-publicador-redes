@@ -648,7 +648,7 @@ class PublicadorFacebook:
                 try:
                     botones = self.driver.find_elements(
                         By.XPATH,
-                        "//div[@aria-label='Agregar amigo' or @aria-label='Add friend'][@role='button']"
+                        "//div[@aria-label='Añadir amigo(a)' or @aria-label='Agregar amigo' or @aria-label='Add friend'][@role='button']"
                     )
 
                     if not botones:

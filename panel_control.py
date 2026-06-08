@@ -7,7 +7,6 @@ from gestor_licencias import GestorLicencias
 from gestor_registro import GestorRegistro
 from compartido.toast import Toast
 
-# Color principal de PublicadorRedes
 COLOR_PRINCIPAL = "#7c3aed"
 COLOR_HOVER     = "#6d28d9"
 
@@ -57,7 +56,6 @@ class PanelControl:
         self.root.geometry(f'{width}x{height}+{x}+{y}')
         self.root.deiconify()
 
-        # Reaplicar icono múltiples veces para garantizar que Windows lo aplique
         try:
             ico = os.path.join(self.base_dir, 'iconos', 'dashboard.ico')
             self.root.after(100, lambda: self.root.iconbitmap(ico))
@@ -68,7 +66,6 @@ class PanelControl:
         self._verificar_actualizacion()
 
     def _exe(self, nombre):
-        """Retorna ruta al .exe en la misma carpeta del ejecutable"""
         if getattr(sys, 'frozen', False):
             base = os.path.dirname(sys.executable)
         else:
@@ -76,7 +73,6 @@ class PanelControl:
         return os.path.join(base, nombre)
 
     def _verificar_licencia(self):
-        """Verifica licencia — usa caché si no hay código guardado (caso TRIAL)"""
         codigo = self.gestor_licencias.obtener_codigo_guardado()
 
         if not codigo:
@@ -87,7 +83,7 @@ class PanelControl:
             if os.path.exists(wizard):
                 subprocess.Popen([wizard] if wizard.endswith('.exe') else [sys.executable, wizard])
             else:
-                messagebox.showwarning("Sin Licencia", "No hay licencia configurada.\n\nEjecuta el Wizard de primera vez.")
+                messagebox.showwarning("Sin Licencia", "No hay licencia configurada.")
             return None
 
         resultado = self.gestor_licencias.verificar_licencia(codigo, mostrar_mensajes=False)
@@ -96,115 +92,68 @@ class PanelControl:
             messagebox.showerror("Licencia Inválida", "Tu licencia no es válida o ha expirado.")
             return None
 
-        # Verificar expiración para licencias TRIAL
         tipo = resultado.get('tipo', 'TRIAL')
         if tipo == 'TRIAL':
             dias = resultado.get('diasRestantes', 0)
             if dias is not None and dias <= 0:
-                messagebox.showwarning(
-                    "⏰ Período de Prueba Expirado",
-                    "Tu período de prueba ha terminado.\n\n"
-                    "Adquiere la versión Completa para seguir usando todas las funciones.\n\n"
-                    "Visita: automapro-frontend.vercel.app"
-                )
+                messagebox.showwarning("⏰ Período de Prueba Expirado",
+                    "Tu período de prueba ha terminado.\n\nVisita: automapro-frontend.vercel.app")
                 self._abrir_upgrade()
                 return None
 
         return resultado
 
     def _construir_ui(self):
-        """Construye la interfaz del panel"""
         tipo_licencia = self.licencia.get('tipo', 'TRIAL')
         es_full = tipo_licencia in ['FULL', 'MASTER'] or self.licencia.get('developer_permanente')
 
-        # ==================== HEADER ====================
         header = tk.Frame(self.root, bg=COLOR_PRINCIPAL, pady=15)
         header.pack(fill='x')
 
         try:
-            ruta_version = os.path.join(self.base_dir, 'version.txt')
-            with open(ruta_version, 'r', encoding='utf-8') as f:
+            with open(os.path.join(self.base_dir, 'version.txt'), 'r', encoding='utf-8') as f:
                 version = f.read().strip()
         except Exception:
             version = '1.0.0'
 
-        tk.Label(
-            header,
-            text="🟣 Publicador Redes",
-            font=("Segoe UI", 20, "bold"),
-            bg=COLOR_PRINCIPAL,
-            fg="white"
-        ).pack()
+        tk.Label(header, text="🟣 Publicador Redes",
+                 font=("Segoe UI", 20, "bold"), bg=COLOR_PRINCIPAL, fg="white").pack()
+        tk.Label(header, text=f"v{version}",
+                 font=("Segoe UI", 9), bg=COLOR_PRINCIPAL, fg="#d8c8f8").pack()
 
-        tk.Label(
-            header,
-            text=f"v{version}",
-            font=("Segoe UI", 9),
-            bg=COLOR_PRINCIPAL,
-            fg="#d8c8f8"
-        ).pack()
-
-        # Badge de licencia
         if self.licencia.get('developer_permanente'):
-            texto_lic = "👑 LICENCIA MAESTRA"
-            color_lic = "#6f42c1"
+            texto_lic, color_lic = "👑 LICENCIA MAESTRA", "#6f42c1"
         elif tipo_licencia == "FULL":
-            texto_lic = "✅ LICENCIA COMPLETA"
-            color_lic = "#28a745"
+            texto_lic, color_lic = "✅ LICENCIA COMPLETA", "#28a745"
         else:
             dias = self.licencia.get('diasRestantes', 0)
-            texto_lic = f"⚠️  PRUEBA — {dias} días restantes"
-            color_lic = "#e65100"
+            texto_lic, color_lic = f"⚠️  PRUEBA — {dias} días restantes", "#e65100"
 
-        tk.Label(
-            header,
-            text=texto_lic,
-            font=("Segoe UI", 10, "bold"),
-            bg=color_lic,
-            fg="white",
-            padx=15,
-            pady=4
-        ).pack(pady=(8, 0))
+        tk.Label(header, text=texto_lic, font=("Segoe UI", 10, "bold"),
+                 bg=color_lic, fg="white", padx=15, pady=4).pack(pady=(8, 0))
 
-        # Banner upgrade (solo TRIAL)
         if not es_full:
             banner = tk.Frame(self.root, bg="#fff3cd", pady=8)
             banner.pack(fill='x')
-            tk.Label(
-                banner,
-                text="🔓 Desbloquea Instagram, Twitter, LinkedIn y más con la versión Completa",
-                font=("Segoe UI", 9),
-                bg="#fff3cd",
-                fg="#856404"
-            ).pack(side='left', padx=(15, 10))
-            tk.Button(
-                banner,
-                text="⬆️ Comprar versión Completa",
-                font=("Segoe UI", 9, "bold"),
-                bg="#ffc107",
-                fg="#212529",
-                cursor="hand2",
-                relief='flat',
-                padx=10,
-                command=self._abrir_upgrade
-            ).pack(side='right', padx=(0, 15))
+            tk.Label(banner,
+                     text="🔓 Desbloquea Instagram, Twitter, LinkedIn y más con la versión Completa",
+                     font=("Segoe UI", 9), bg="#fff3cd", fg="#856404").pack(side='left', padx=(15, 10))
+            tk.Button(banner, text="⬆️ Comprar versión Completa",
+                      font=("Segoe UI", 9, "bold"), bg="#ffc107", fg="#212529",
+                      cursor="hand2", relief='flat', padx=10,
+                      command=self._abrir_upgrade).pack(side='right', padx=(0, 15))
 
-        # ==================== GRID PRINCIPAL ====================
         container = tk.Frame(self.root, bg="#f0f0f0")
         container.pack(fill='both', expand=True, padx=25, pady=15)
-
         grid = tk.Frame(container, bg="#f0f0f0")
         grid.pack(fill='both', expand=True)
-
         self._botones_grid = []
 
-        # Fila 0
-        self._boton(grid, "⚡\nPublicar Ahora", "Publicar anuncio en redes",
-                    self._publicar_ahora, row=0, col=0, color="#e65100")
+        self._boton(grid, "⚡\nAcciones", "Publicar y automatizar",
+                    self._abrir_acciones, row=0, col=0, color="#e65100")
         self._boton(grid, "⚙️\nConfigurador", "Ajustar configuración",
                     self._abrir_configurador, row=0, col=1, en_hilo=True)
 
-        # Fila 1
         if es_full:
             self._boton(grid, "📢\nAnuncios", "Gestionar anuncios",
                         self._abrir_gestor_anuncios, row=1, col=0, en_hilo=True)
@@ -214,35 +163,23 @@ class PanelControl:
         self._boton(grid, "📊\nEstadísticas", "Ver historial",
                     self._ver_estadisticas, row=1, col=1)
 
-        # Fila 2
         if es_full:
             self._boton(grid, "🗓️\nTareas Automáticas", "Programar publicaciones",
                         self._gestionar_tareas, row=2, col=0, color="#28a745", en_hilo=True)
         else:
             self._boton(grid, "🔒\nTareas Automáticas", "Solo versión Completa",
                         self._mostrar_mensaje_upgrade, row=2, col=0, color="#9e9e9e")
-
         self._boton(grid, "❓\nAyuda", "Cómo usar el sistema",
                     self._mostrar_ayuda, row=2, col=1)
-
-        # Fila 3
         self._boton(grid, "❌\nSalir", "Cerrar panel",
                     self.root.destroy, row=3, col=0, color="#dc3545")
 
-        # Footer
         footer = tk.Frame(self.root, bg="#e0e0e0", pady=8)
         footer.pack(fill='x', side='bottom')
-        tk.Label(
-            footer,
-            text="AutomaPro — PublicadorRedes v1.0.0",
-            font=("Segoe UI", 9),
-            bg="#e0e0e0",
-            fg="#666"
-        ).pack()
+        tk.Label(footer, text="AutomaPro — PublicadorRedes v1.0.0",
+                 font=("Segoe UI", 9), bg="#e0e0e0", fg="#666").pack()
 
-    def _boton(self, parent, texto, subtexto, comando, row, col,
-               color="white", en_hilo=False):
-        """Crea un botón de opción en el grid — simétrico a MensajesBiblicos"""
+    def _boton(self, parent, texto, subtexto, comando, row, col, color="white", en_hilo=False):
         frame = tk.Frame(parent, bg="white", relief='solid', bd=1, cursor="hand2")
         frame.grid(row=row, column=col, padx=5, pady=5, sticky='nsew')
         parent.grid_columnconfigure(col, weight=1)
@@ -252,30 +189,17 @@ class PanelControl:
         bg_texto = color if es_coloreado else "white"
         fg_texto = "white" if es_coloreado else COLOR_PRINCIPAL
 
-        lbl_titulo = tk.Label(
-            frame,
-            text=texto,
-            font=("Segoe UI", 11, "bold"),
-            bg=bg_texto,
-            fg=fg_texto,
-            justify='center'
-        )
+        lbl_titulo = tk.Label(frame, text=texto, font=("Segoe UI", 11, "bold"),
+                              bg=bg_texto, fg=fg_texto, justify='center')
         lbl_titulo.pack(pady=(15, 5), fill='both', expand=True)
 
-        lbl_sub = tk.Label(
-            frame,
-            text=subtexto,
-            font=("Segoe UI", 8),
-            bg=bg_texto,
-            fg="white" if es_coloreado else "gray",
-            justify='center'
-        )
+        lbl_sub = tk.Label(frame, text=subtexto, font=("Segoe UI", 8),
+                           bg=bg_texto, fg="white" if es_coloreado else "gray", justify='center')
         lbl_sub.pack(pady=(0, 15))
 
         if es_coloreado:
             frame.config(bg=color)
 
-        # Guardar referencias para bloquear/desbloquear
         frame._cmd = comando
         frame._en_hilo = en_hilo
         frame._color = color
@@ -304,7 +228,6 @@ class PanelControl:
             w.bind('<Leave>', _on_leave)
 
     def _bloquear_grid(self):
-        """Bloquea todos los botones del grid"""
         self.root.config(cursor="wait")
         for frame, widgets in self._botones_grid:
             frame.config(cursor="", bg="#e0e0e0")
@@ -318,7 +241,6 @@ class PanelControl:
             frame.unbind('<Leave>')
 
     def _desbloquear_grid(self):
-        """Restaura todos los botones del grid"""
         self.root.config(cursor="")
         for frame, widgets in self._botones_grid:
             color_orig = getattr(frame, '_color', 'white')
@@ -350,13 +272,8 @@ class PanelControl:
         self.root.update_idletasks()
         self.root.update()
         self.root.after(100, self._refrescar_ventana)
-        # Forzar redibujado completo de la ventana
-        self.root.update_idletasks()
-        self.root.update()
-        self.root.after(100, self._refrescar_ventana)
 
     def _refrescar_ventana(self):
-        """Fuerza un redibujado completo de la ventana"""
         try:
             self.root.withdraw()
             self.root.after(50, self.root.deiconify)
@@ -364,7 +281,6 @@ class PanelControl:
             pass
 
     def _lanzar_en_hilo(self, cmd):
-        """Para subprocesos: bloquea grid, corre en hilo, desbloquea al terminar"""
         self._bloquear_grid()
         import threading
         def _hilo():
@@ -375,27 +291,132 @@ class PanelControl:
         threading.Thread(target=_hilo, daemon=True).start()
 
     def _centrar_ventana(self, ventana, ancho, alto):
-        """Centra una ventana en pantalla antes de mostrarla"""
         x = (ventana.winfo_screenwidth() // 2) - (ancho // 2)
         y = (ventana.winfo_screenheight() // 2) - (alto // 2)
         ventana.geometry(f'{ancho}x{alto}+{x}+{y}')
 
-    # ==================== ACCIONES ====================
+    # ==================== VENTANA ACCIONES ====================
 
-    def _publicar_ahora(self):
-        """Ejecuta el publicador principal"""
-        try:
-            exe = self._exe("PublicadorRedes.exe")
-            if os.path.exists(exe):
-                subprocess.Popen([exe])
-            else:
-                subprocess.Popen([sys.executable,
-                                  os.path.join(self.base_dir, "publicar_redes.py")])
-        except Exception as e:
-            messagebox.showerror("❌ Error", f"No se pudo iniciar el publicador:\n{e}")
+    def _abrir_acciones(self):
+        tipo_licencia = self.licencia.get('tipo', 'TRIAL')
+        es_full = tipo_licencia in ['FULL', 'MASTER'] or self.licencia.get('developer_permanente')
+
+        ventana = tk.Toplevel(self.root)
+        ventana.withdraw()
+        ventana.title("⚡ Acciones")
+        ventana.resizable(False, False)
+        ventana.configure(bg="#f0f0f0")
+        ventana.transient(self.root)
+        ventana.grab_set()
+
+        header = tk.Frame(ventana, bg="#e65100", pady=12)
+        header.pack(fill='x')
+        tk.Label(header, text="⚡ Acciones",
+                 font=("Segoe UI", 14, "bold"), bg="#e65100", fg="white").pack()
+        tk.Label(header, text="Selecciona qué deseas ejecutar",
+                 font=("Segoe UI", 9), bg="#e65100", fg="white").pack()
+
+        frame = tk.Frame(ventana, bg="#f0f0f0")
+        frame.pack(fill='both', expand=True, padx=20, pady=15)
+
+        def _boton_accion(texto, color, comando, activo=True):
+            def _ejecutar():
+                ventana.grab_release()
+                ventana.destroy()
+                comando()
+            tk.Button(
+                frame,
+                text=texto if activo else f"🔒  {texto[2:].strip()}  —  versión Completa",
+                font=("Segoe UI", 11, "bold") if activo else ("Segoe UI", 10),
+                bg=color if activo else "#e0e0e0",
+                fg="white" if activo else "#9e9e9e",
+                cursor="hand2", anchor='w', padx=15, pady=8,
+                command=_ejecutar if activo else self._mostrar_mensaje_upgrade
+            ).pack(fill='x', pady=(0, 6))
+
+        _boton_accion("📘  Publicar en Facebook", "#1877f2", self._publicar_facebook)
+        _boton_accion("👥  Enviar Solicitudes de Amistad — Facebook",
+                      "#1877f2", self._solicitudes_facebook, activo=es_full)
+
+        tk.Frame(frame, bg="#e0e0e0", height=1).pack(fill='x', pady=(4, 10))
+
+        _boton_accion("📸  Publicar en Instagram", "#e1306c",
+                      self._publicar_instagram, activo=es_full)
+        _boton_accion("👥  Seguir Usuarios — Instagram", "#e1306c",
+                      self._seguir_instagram, activo=es_full)
+
+        tk.Frame(frame, bg="#e0e0e0", height=1).pack(fill='x', pady=(4, 10))
+
+        _boton_accion("🐦  Publicar en Twitter/X", "#1da1f2",
+                      self._publicar_twitter, activo=es_full)
+        _boton_accion("👥  Seguir Usuarios — Twitter/X", "#1da1f2",
+                      self._seguir_twitter, activo=es_full)
+
+        tk.Frame(frame, bg="#e0e0e0", height=1).pack(fill='x', pady=(4, 10))
+
+        _boton_accion("💼  Publicar en LinkedIn", "#0077b5",
+                      self._publicar_linkedin, activo=es_full)
+        _boton_accion("👥  Enviar Solicitudes de Conexión — LinkedIn", "#0077b5",
+                      self._conexiones_linkedin, activo=es_full)
+
+        tk.Button(frame, text="Cancelar", font=("Segoe UI", 10),
+                  bg="#6c757d", fg="white", width=12,
+                  command=lambda: [ventana.grab_release(), ventana.destroy()]
+                  ).pack(pady=(10, 0))
+
+        ventana.protocol("WM_DELETE_WINDOW",
+                         lambda: [ventana.grab_release(), ventana.destroy()])
+        self._centrar_ventana(ventana, 520, 620)
+        ventana.deiconify()
+
+    # ==================== MÉTODOS DE ACCIÓN ====================
+
+    def _lanzar_exe(self, argumento=None):
+        """Lanza PublicadorRedes.exe con argumento opcional — muestra consola"""
+        exe = self._exe("PublicadorRedes.exe")
+        if os.path.exists(exe):
+            cmd = [exe] + ([argumento] if argumento else [])
+        else:
+            cmd = [sys.executable, os.path.join(self.base_dir, "publicar_redes.py")]
+            if argumento:
+                cmd.append(argumento)
+        subprocess.Popen(cmd)
+
+    def _publicar_facebook(self):
+        self._lanzar_exe()
+        self._toast("🚀 Publicación iniciada", "El navegador se abrirá en unos segundos...")
+
+    def _solicitudes_facebook(self):
+        self._lanzar_exe("--solicitudes-facebook")
+        self._toast("👥 Enviando solicitudes", "Facebook — consola abierta...")
+
+    def _publicar_instagram(self):
+        self._lanzar_exe("--publicar-instagram")
+        self._toast("📸 Publicando en Instagram", "El navegador se abrirá en unos segundos...")
+
+    def _seguir_instagram(self):
+        self._lanzar_exe("--seguir-instagram")
+        self._toast("👥 Siguiendo usuarios", "Instagram — consola abierta...")
+
+    def _publicar_twitter(self):
+        self._lanzar_exe("--publicar-twitter")
+        self._toast("🐦 Publicando en Twitter/X", "El navegador se abrirá en unos segundos...")
+
+    def _seguir_twitter(self):
+        self._lanzar_exe("--seguir-twitter")
+        self._toast("👥 Siguiendo usuarios", "Twitter/X — consola abierta...")
+
+    def _publicar_linkedin(self):
+        self._lanzar_exe("--publicar-linkedin")
+        self._toast("💼 Publicando en LinkedIn", "El navegador se abrirá en unos segundos...")
+
+    def _conexiones_linkedin(self):
+        self._lanzar_exe("--conexiones-linkedin")
+        self._toast("👥 Enviando conexiones", "LinkedIn — consola abierta...")
+
+    # ==================== OTROS MÉTODOS ====================
 
     def _abrir_configurador(self):
-        """Abre el configurador GUI"""
         try:
             exe = self._exe("ConfiguradorRedes.exe")
             if os.path.exists(exe):
@@ -407,7 +428,6 @@ class PanelControl:
             messagebox.showerror("❌ Error", f"No se pudo abrir el configurador:\n{e}")
 
     def _abrir_gestor_anuncios(self):
-        """Abre el gestor de anuncios (solo FULL)"""
         try:
             exe = self._exe("GestorAnuncios.exe")
             if os.path.exists(exe):
@@ -419,19 +439,14 @@ class PanelControl:
             messagebox.showerror("❌ Error", f"No se pudo abrir el gestor de anuncios:\n{e}")
 
     def _abrir_carpeta_anuncios(self):
-        """TRIAL: abre la carpeta anuncios en el explorador"""
         import subprocess as sp
         carpeta = os.path.join(self.base_dir, "anuncios")
         os.makedirs(carpeta, exist_ok=True)
         sp.Popen(f'explorer "{carpeta}"')
-        self._toast(
-            "📢 Tus Anuncios",
-            "Carpeta abierta — versión Completa incluye editor visual",
-            duracion=5000
-        )
+        self._toast("📢 Tus Anuncios",
+                    "Carpeta abierta — versión Completa incluye editor visual", duracion=5000)
 
     def _gestionar_tareas(self):
-        """Abre el gestor de tareas automáticas"""
         try:
             exe = self._exe("GestorTareasRedes.exe")
             if os.path.exists(exe):
@@ -442,7 +457,6 @@ class PanelControl:
             messagebox.showerror("❌ Error", f"No se pudo abrir el gestor de tareas:\n{e}")
 
     def _ver_estadisticas(self):
-        """Muestra ventana de estadísticas"""
         try:
             gestor = GestorRegistro()
             stats = gestor.obtener_estadisticas()
@@ -458,8 +472,7 @@ class PanelControl:
             header = tk.Frame(ventana, bg=COLOR_PRINCIPAL, pady=12)
             header.pack(fill='x')
             tk.Label(header, text="📊 Estadísticas de Publicación",
-                     font=("Segoe UI", 13, "bold"),
-                     bg=COLOR_PRINCIPAL, fg="white").pack()
+                     font=("Segoe UI", 13, "bold"), bg=COLOR_PRINCIPAL, fg="white").pack()
 
             frame = tk.Frame(ventana, bg="white", padx=30, pady=20)
             frame.pack(fill='both', expand=True, padx=20, pady=15)
@@ -468,16 +481,11 @@ class PanelControl:
             if fecha_ultima and fecha_ultima != 'Nunca':
                 fecha_ultima = fecha_ultima[:19]
 
-            total = stats.get('total', 0)
-            exitosas = stats.get('exitosas', 0)
-            fallidas = stats.get('fallidas', 0)
-            tasa = stats.get('tasa_exito', 0)
-
             items = [
-                ("📦 Total publicaciones:", str(total)),
-                ("✅ Exitosas:", str(exitosas)),
-                ("❌ Fallidas:", str(fallidas)),
-                ("🎯 Tasa de éxito:", f"{tasa}%"),
+                ("📦 Total publicaciones:", str(stats.get('total', 0))),
+                ("✅ Exitosas:", str(stats.get('exitosas', 0))),
+                ("❌ Fallidas:", str(stats.get('fallidas', 0))),
+                ("🎯 Tasa de éxito:", f"{stats.get('tasa_exito', 0)}%"),
                 ("📅 Última publicación:", fecha_ultima),
             ]
 
@@ -489,12 +497,10 @@ class PanelControl:
                 tk.Label(row, text=valor, font=("Segoe UI", 10),
                          bg="white", anchor='w').pack(side='left')
 
-            tk.Button(
-                ventana, text="Cerrar",
-                font=("Segoe UI", 10),
-                bg="#6c757d", fg="white", width=12,
-                command=lambda: [ventana.grab_release(), ventana.destroy()]
-            ).pack(pady=15)
+            tk.Button(ventana, text="Cerrar", font=("Segoe UI", 10),
+                      bg="#6c757d", fg="white", width=12,
+                      command=lambda: [ventana.grab_release(), ventana.destroy()]
+                      ).pack(pady=15)
 
             ventana.protocol("WM_DELETE_WINDOW",
                              lambda: [ventana.grab_release(), ventana.destroy()])
@@ -505,7 +511,6 @@ class PanelControl:
             messagebox.showerror("❌ Error", f"Error mostrando estadísticas:\n{e}")
 
     def _mostrar_ayuda(self):
-        """Muestra el centro de ayuda con panel de temas"""
         ventana = tk.Toplevel(self.root)
         ventana.withdraw()
         ventana.title("❓ Centro de Ayuda")
@@ -515,74 +520,48 @@ class PanelControl:
         ventana.grab_set()
 
         TEMAS = [
-            ("⚡  Publicar Ahora",
-             "⚡ PUBLICAR AHORA\n\n"
-             "Publica automáticamente tu anuncio en las redes sociales configuradas.\n\n"
-             "¿Qué hace?\n"
-             "• Abre el navegador Firefox con tu perfil guardado\n"
-             "• Lee el siguiente anuncio de la carpeta 'anuncios/'\n"
-             "• Publica el texto, imágenes y/o video según la plataforma\n"
-             "• Registra la publicación en el historial\n\n"
-             "¿Cuándo usarlo?\n"
-             "• Cuando quieras publicar manualmente un anuncio\n"
-             "• Si no tienes tareas automáticas programadas\n\n"
-             "Configuración relacionada:\n"
-             "• Configurador → General (navegador, selección de anuncio)\n"
-             "• Configurador → Módulos (activar/desactivar redes sociales)"),
-
+            ("⚡  Acciones",
+             "⚡ ACCIONES\n\n"
+             "Abre el menú de acciones disponibles según tu licencia.\n\n"
+             "Acciones disponibles:\n"
+             "• Publicar en Facebook (siempre disponible)\n"
+             "• Enviar Solicitudes de Amistad en Facebook (versión Completa)\n"
+             "• Publicar en Instagram, Twitter/X, LinkedIn (versión Completa)\n"
+             "• Seguir usuarios / Enviar solicitudes de conexión (versión Completa)"),
             ("📢  Gestionar Anuncios",
              "📢 GESTIONAR ANUNCIOS\n\n"
-             "Editor visual para crear, editar y organizar los anuncios\n"
-             "que se publicarán en tus redes sociales.\n\n"
-             "¿Qué puedes hacer?\n"
-             "• Crear anuncios nuevos con texto, imágenes y video\n"
-             "• Editar o eliminar anuncios existentes\n"
-             "• Reordenar el orden de publicación\n"
-             "• Elegir en qué plataformas publicar cada anuncio\n\n"
-             "Estructura de cada anuncio:\n"
-             "• anuncios/anuncio_001/datos.txt  ← texto y configuración\n"
-             "• anuncios/anuncio_001/imagenes/  ← imágenes del anuncio\n"
-             "• anuncios/anuncio_001/videos/    ← videos del anuncio\n\n"
+             "Editor visual para crear, editar y organizar los anuncios.\n\n"
+             "Estructura:\n"
+             "• anuncios/anuncio_001/datos.txt\n"
+             "• anuncios/anuncio_001/imagenes/\n"
+             "• anuncios/anuncio_001/videos/\n\n"
              "⚠️ Requiere versión Completa"),
-
             ("⚙️  Configurador",
              "⚙️ CONFIGURADOR\n\n"
-             "Panel principal de configuración del sistema.\n\n"
-             "Opciones disponibles:\n"
-             "• General → navegador, perfil, modo debug\n"
-             "• Anuncios → selección, hashtags, firma\n"
-             "• Publicación → tiempos de espera, reintentos\n"
-             "• Módulos → activar/desactivar redes sociales\n"
-             "• Límites → tiempo mínimo entre publicaciones\n\n"
-             "Recuerda presionar 💾 Guardar antes de cerrar."),
-
+             "Panel de configuración del sistema.\n\n"
+             "• General → navegador, perfil\n"
+             "• Anuncios → selección, hashtags\n"
+             "• Publicación → tiempos, reintentos\n"
+             "• Módulos → activar/desactivar redes\n\n"
+             "Recuerda presionar 💾 Guardar."),
             ("📊  Estadísticas",
              "📊 ESTADÍSTICAS\n\n"
-             "Muestra un resumen del historial de publicaciones.\n\n"
-             "¿Qué información muestra?\n"
-             "• Total de publicaciones realizadas\n"
-             "• Publicaciones exitosas y fallidas\n"
-             "• Tasa de éxito en porcentaje\n"
-             "• Fecha de la última publicación\n\n"
-             "Los datos se acumulan con el tiempo."),
-
+             "Resumen del historial de publicaciones:\n"
+             "• Total, exitosas y fallidas\n"
+             "• Tasa de éxito\n"
+             "• Última publicación"),
             ("🗓️  Tareas Automáticas",
              "🗓️ TAREAS AUTOMÁTICAS\n\n"
-             "Programa el sistema para que publique automáticamente\n"
-             "en los días y horas que elijas.\n\n"
-             "¿Qué puedes programar?\n"
-             "• Días de la semana y hora de ejecución\n"
-             "• Frecuencia de publicación\n\n"
-             "Usa el Programador de Tareas de Windows internamente.\n\n"
+             "Programa publicaciones automáticas.\n\n"
+             "• Días y hora de ejecución\n"
+             "• Usa el Programador de Tareas de Windows\n\n"
              "⚠️ Requiere versión Completa"),
         ]
 
-        # Layout del centro de ayuda
         header = tk.Frame(ventana, bg=COLOR_PRINCIPAL, pady=12)
         header.pack(fill='x')
         tk.Label(header, text="❓ Centro de Ayuda",
-                 font=("Segoe UI", 13, "bold"),
-                 bg=COLOR_PRINCIPAL, fg="white").pack()
+                 font=("Segoe UI", 13, "bold"), bg=COLOR_PRINCIPAL, fg="white").pack()
 
         cuerpo = tk.Frame(ventana, bg="#f0f0f0")
         cuerpo.pack(fill='both', expand=True, padx=10, pady=10)
@@ -598,7 +577,6 @@ class PanelControl:
         texto_detalle = tk.Text(panel_der, wrap='word', font=("Segoe UI", 10),
                                 bg="white", relief='flat', padx=15, pady=15,
                                 state='disabled', yscrollcommand=scroll.set)
-        texto_detalle.configure(yscrollcommand=scroll.set)
         scroll.pack(side='right', fill='y')
         texto_detalle.pack(fill='both', expand=True)
 
@@ -634,7 +612,6 @@ class PanelControl:
         ventana.deiconify()
 
     def _abrir_upgrade(self):
-        """Abre la página de compra con el código de licencia del usuario"""
         import webbrowser
         try:
             codigo = self.gestor_licencias.obtener_codigo_guardado()
@@ -644,16 +621,12 @@ class PanelControl:
             webbrowser.open("https://automapro-frontend.vercel.app/catalogo")
 
     def _mostrar_mensaje_upgrade(self):
-        """Muestra mensaje de función bloqueada para TRIAL"""
-        messagebox.showinfo(
-            "🔒 Versión Completa requerida",
-            "Esta función requiere la versión Completa.\n\n"
-            "Visita: automapro-frontend.vercel.app\n"
-            "Precio: $19.99 USD (pago único)"
-        )
+        messagebox.showinfo("🔒 Versión Completa requerida",
+                            "Esta función requiere la versión Completa.\n\n"
+                            "Visita: automapro-frontend.vercel.app\n"
+                            "Precio: $19.99 USD (pago único)")
 
     def _verificar_actualizacion(self):
-        """Verifica si hay una versión nueva disponible en segundo plano"""
         import threading
         def consultar():
             try:
@@ -669,8 +642,8 @@ class PanelControl:
         threading.Thread(target=consultar, daemon=True).start()
 
     def _mostrar_ventana_actualizacion(self, version_nueva, ruta_archivo):
-        """Muestra ventana modal de actualización disponible"""
         import urllib.request, tempfile, threading
+        from tkinter import ttk
 
         ventana = tk.Toplevel(self.root)
         ventana.title("Actualización Disponible")
@@ -688,8 +661,7 @@ class PanelControl:
         header = tk.Frame(ventana, bg=COLOR_PRINCIPAL, pady=15)
         header.pack(fill='x')
         tk.Label(header, text="🔄  Actualización Disponible",
-                 font=("Segoe UI", 13, "bold"),
-                 bg=COLOR_PRINCIPAL, fg="white").pack()
+                 font=("Segoe UI", 13, "bold"), bg=COLOR_PRINCIPAL, fg="white").pack()
 
         cuerpo = tk.Frame(ventana, bg="#f0f0f0", padx=30, pady=15)
         cuerpo.pack(fill='both', expand=True)
@@ -705,11 +677,10 @@ class PanelControl:
         tk.Label(cuerpo, text=f"Nueva versión:       {version_nueva}",
                  font=("Segoe UI", 10, "bold"), bg="#f0f0f0",
                  fg=COLOR_PRINCIPAL, anchor='w').pack(fill='x', pady=(0, 10))
-        tk.Label(cuerpo,
-                 text="Hay una nueva versión disponible.\nHaz clic en Actualizar para instalarla automáticamente.",
+        tk.Label(cuerpo, text="Hay una nueva versión disponible.\nHaz clic en Actualizar para instalarla.",
                  font=("Segoe UI", 10), bg="#f0f0f0", justify='left').pack(fill='x')
 
-        barra = tk.ttk.Progressbar(ventana, mode='indeterminate')
+        barra = ttk.Progressbar(ventana, mode='indeterminate')
 
         def actualizar_ahora():
             if not ruta_archivo:
@@ -729,20 +700,16 @@ class PanelControl:
                                               messagebox.showerror("Error", f"No se pudo descargar:\n{ex}")])
             threading.Thread(target=_descargar, daemon=True).start()
 
-        from tkinter import ttk
         btn_actualizar = tk.Button(ventana, text="⬆️ Actualizar ahora",
                                    font=("Segoe UI", 10, "bold"),
                                    bg=COLOR_PRINCIPAL, fg="white", width=18,
                                    command=actualizar_ahora)
         btn_actualizar.pack(side='left', padx=(30, 10), pady=10)
-
-        tk.Button(ventana, text="Ahora no",
-                  font=("Segoe UI", 10),
+        tk.Button(ventana, text="Ahora no", font=("Segoe UI", 10),
                   bg="#6c757d", fg="white", width=12,
                   command=ventana.destroy).pack(side='right', padx=(0, 30), pady=10)
 
     def _toast(self, titulo, mensaje="", duracion=3000, color="#28a745"):
-        """Delega al sistema centralizado de toasts"""
         if color == Toast.COLOR_ERROR or color == "#dc3545":
             Toast.error(self.root, f"{titulo}\n{mensaje}", duracion)
         elif color == Toast.COLOR_ADVERTENCIA or color == "#e65100":
@@ -757,7 +724,6 @@ class PanelControl:
 
 
 def _verificar_wizard_completado():
-    """Si no hay licencia configurada, lanza el wizard y termina"""
     gestor = GestorLicencias("PublicadorRedes")
     if not gestor.archivo_config.exists():
         if getattr(sys, 'frozen', False):
@@ -770,10 +736,8 @@ def _verificar_wizard_completado():
         else:
             root = tk.Tk()
             root.withdraw()
-            messagebox.showwarning(
-                "Configuración requerida",
-                "Por favor ejecuta WizardPublicador.exe para configurar el sistema."
-            )
+            messagebox.showwarning("Configuración requerida",
+                                   "Por favor ejecuta WizardPublicador.exe para configurar el sistema.")
             root.destroy()
         return False
     return True

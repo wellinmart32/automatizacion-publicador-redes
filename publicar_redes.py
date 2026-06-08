@@ -199,11 +199,173 @@ def main():
     print(f"{N}" + "="*70 + X + "\n")
 
 
+def main_solicitudes_facebook():
+    """Envía solicitudes de amistad en Facebook"""
+    mostrar_banner()
+    try:
+        config = leer_config_global()
+    except Exception as e:
+        print(f"{R}❌ Error leyendo configuración: {e}{X}")
+        return
+    gestor_lic = GestorLicencias("PublicadorRedes")
+    codigo = gestor_lic.obtener_codigo_guardado()
+    if not codigo:
+        print(f"{R}❌ No hay código de licencia configurado{X}")
+        return
+    estado = gestor_lic.verificar_licencia(codigo, mostrar_mensajes=True)
+    es_full = estado.get('tipo') in ['FULL', 'MASTER'] or estado.get('developer_permanente')
+    print(f"\n{N}{C}👥 ENVIAR SOLICITUDES DE AMISTAD — Facebook{X}\n")
+    from publicadores.publicador_facebook import PublicadorFacebook
+    pub = PublicadorFacebook(config, es_full=es_full)
+    pub._iniciar_navegador()
+    pub.enviar_solicitudes_amistad()
+    pub.cerrar_navegador()
+
+
+def main_publicar_instagram():
+    mostrar_banner()
+    try:
+        config = leer_config_global()
+    except Exception as e:
+        print(f"{R}❌ Error: {e}{X}")
+        return
+    gestor_lic = GestorLicencias("PublicadorRedes")
+    codigo = gestor_lic.obtener_codigo_guardado()
+    estado = gestor_lic.verificar_licencia(codigo, mostrar_mensajes=True)
+    es_full = estado.get('tipo') in ['FULL', 'MASTER'] or estado.get('developer_permanente')
+    gestor_reg = GestorRegistro()
+    texto, anuncio_dir, imagenes, videos = obtener_anuncio(gestor_reg._leer_registro())
+    print(f"\n{N}{C}📸 PUBLICAR EN INSTAGRAM{X}\n")
+    from publicadores.publicador_instagram import PublicadorInstagram
+    pub = PublicadorInstagram(config, es_full=es_full)
+    exito = pub.publicar(texto, imagenes, videos)
+    pub.cerrar_navegador()
+    if exito:
+        gestor_reg.registrar_publicacion_exitosa('instagram', 'anuncio', anuncio_dir)
+
+
+def main_seguir_instagram():
+    mostrar_banner()
+    try:
+        config = leer_config_global()
+    except Exception as e:
+        print(f"{R}❌ Error: {e}{X}")
+        return
+    gestor_lic = GestorLicencias("PublicadorRedes")
+    codigo = gestor_lic.obtener_codigo_guardado()
+    estado = gestor_lic.verificar_licencia(codigo, mostrar_mensajes=True)
+    es_full = estado.get('tipo') in ['FULL', 'MASTER'] or estado.get('developer_permanente')
+    print(f"\n{N}{C}👥 SEGUIR USUARIOS — Instagram{X}\n")
+    from publicadores.publicador_instagram import PublicadorInstagram
+    pub = PublicadorInstagram(config, es_full=es_full)
+    pub._iniciar_navegador()
+    pub.seguir_usuarios()
+    pub.cerrar_navegador()
+
+
+def main_publicar_twitter():
+    mostrar_banner()
+    try:
+        config = leer_config_global()
+    except Exception as e:
+        print(f"{R}❌ Error: {e}{X}")
+        return
+    gestor_lic = GestorLicencias("PublicadorRedes")
+    codigo = gestor_lic.obtener_codigo_guardado()
+    estado = gestor_lic.verificar_licencia(codigo, mostrar_mensajes=True)
+    es_full = estado.get('tipo') in ['FULL', 'MASTER'] or estado.get('developer_permanente')
+    gestor_reg = GestorRegistro()
+    texto, anuncio_dir, imagenes, videos = obtener_anuncio(gestor_reg._leer_registro())
+    print(f"\n{N}{C}🐦 PUBLICAR EN TWITTER/X{X}\n")
+    from publicadores.publicador_twitter import PublicadorTwitter
+    pub = PublicadorTwitter(config, es_full=es_full)
+    exito = pub.publicar(texto, imagenes, videos)
+    pub.cerrar_navegador()
+    if exito:
+        gestor_reg.registrar_publicacion_exitosa('twitter', 'anuncio', anuncio_dir)
+
+
+def main_seguir_twitter():
+    mostrar_banner()
+    try:
+        config = leer_config_global()
+    except Exception as e:
+        print(f"{R}❌ Error: {e}{X}")
+        return
+    gestor_lic = GestorLicencias("PublicadorRedes")
+    codigo = gestor_lic.obtener_codigo_guardado()
+    estado = gestor_lic.verificar_licencia(codigo, mostrar_mensajes=True)
+    es_full = estado.get('tipo') in ['FULL', 'MASTER'] or estado.get('developer_permanente')
+    print(f"\n{N}{C}👥 SEGUIR USUARIOS — Twitter/X{X}\n")
+    from publicadores.publicador_twitter import PublicadorTwitter
+    pub = PublicadorTwitter(config, es_full=es_full)
+    pub._iniciar_navegador()
+    pub.seguir_usuarios()
+    pub.cerrar_navegador()
+
+
+def main_publicar_linkedin():
+    mostrar_banner()
+    try:
+        config = leer_config_global()
+    except Exception as e:
+        print(f"{R}❌ Error: {e}{X}")
+        return
+    gestor_lic = GestorLicencias("PublicadorRedes")
+    codigo = gestor_lic.obtener_codigo_guardado()
+    estado = gestor_lic.verificar_licencia(codigo, mostrar_mensajes=True)
+    es_full = estado.get('tipo') in ['FULL', 'MASTER'] or estado.get('developer_permanente')
+    gestor_reg = GestorRegistro()
+    texto, anuncio_dir, imagenes, videos = obtener_anuncio(gestor_reg._leer_registro())
+    print(f"\n{N}{C}💼 PUBLICAR EN LINKEDIN{X}\n")
+    from publicadores.publicador_linkedin import PublicadorLinkedIn
+    pub = PublicadorLinkedIn(config, es_full=es_full)
+    exito = pub.publicar(texto, imagenes, videos)
+    pub.cerrar_navegador()
+    if exito:
+        gestor_reg.registrar_publicacion_exitosa('linkedin', 'anuncio', anuncio_dir)
+
+
+def main_conexiones_linkedin():
+    mostrar_banner()
+    try:
+        config = leer_config_global()
+    except Exception as e:
+        print(f"{R}❌ Error: {e}{X}")
+        return
+    gestor_lic = GestorLicencias("PublicadorRedes")
+    codigo = gestor_lic.obtener_codigo_guardado()
+    estado = gestor_lic.verificar_licencia(codigo, mostrar_mensajes=True)
+    es_full = estado.get('tipo') in ['FULL', 'MASTER'] or estado.get('developer_permanente')
+    print(f"\n{N}{C}👥 ENVIAR SOLICITUDES DE CONEXIÓN — LinkedIn{X}\n")
+    from publicadores.publicador_linkedin import PublicadorLinkedIn
+    pub = PublicadorLinkedIn(config, es_full=es_full)
+    pub._iniciar_navegador()
+    pub.enviar_solicitudes_conexion()
+    pub.cerrar_navegador()
+
+
 if __name__ == "__main__":
     if not _verificar_wizard_completado():
         sys.exit(0)
+
+    acciones = {
+        '--solicitudes-facebook': main_solicitudes_facebook,
+        '--publicar-instagram':   main_publicar_instagram,
+        '--seguir-instagram':     main_seguir_instagram,
+        '--publicar-twitter':     main_publicar_twitter,
+        '--seguir-twitter':       main_seguir_twitter,
+        '--publicar-linkedin':    main_publicar_linkedin,
+        '--conexiones-linkedin':  main_conexiones_linkedin,
+    }
+
+    arg = sys.argv[1] if len(sys.argv) > 1 else None
+
     try:
-        main()
+        if arg and arg in acciones:
+            acciones[arg]()
+        else:
+            main()
     except KeyboardInterrupt:
         print(f"\n\n{R}❌ Proceso cancelado por el usuario{X}\n")
         sys.exit(0)
