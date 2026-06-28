@@ -63,6 +63,9 @@ def leer_config_global():
         'modulo_instagram': config['MODULOS']['publicar_instagram'].lower() == 'si' if config.has_option('MODULOS', 'publicar_instagram') else False,
         'modulo_twitter': config['MODULOS']['publicar_twitter'].lower() == 'si' if config.has_option('MODULOS', 'publicar_twitter') else False,
         'modulo_linkedin': config['MODULOS']['publicar_linkedin'].lower() == 'si' if config.has_option('MODULOS', 'publicar_linkedin') else False,
+
+        # [SECUENCIA]
+        'secuencia_modulos': config['SECUENCIA']['modulos_activos'] if config.has_section('SECUENCIA') and config.has_option('SECUENCIA', 'modulos_activos') else 'publicar_facebook',
     }
 
     return config_dict
@@ -119,6 +122,10 @@ def crear_config_defecto():
         'publicar_linkedin': 'no'
     }
 
+    config['SECUENCIA'] = {
+        'modulos_activos': 'publicar_facebook'
+    }
+
     config['DEBUG'] = {
         'modo_debug': 'detallado'
     }
@@ -152,12 +159,11 @@ def verificar_y_crear_estructura():
     anuncios_existentes = [
         d for d in os.listdir(carpeta_anuncios)
         if os.path.isdir(os.path.join(carpeta_anuncios, d))
-        and d.startswith('anuncio_')
+        and os.path.exists(os.path.join(carpeta_anuncios, d, 'datos.txt'))
     ] if os.path.exists(carpeta_anuncios) else []
 
     if not anuncios_existentes:
-        print("📢 No hay anuncios. Creando anuncio de ejemplo...")
-        _crear_anuncio_ejemplo(carpeta_anuncios)
+        print("📢 No hay anuncios. Agrega uno desde el Gestor de Anuncios.")
 
     return True
 
@@ -197,7 +203,7 @@ def obtener_anuncio(registro_publicaciones):
                 if os.path.isdir(os.path.join(carpeta, d))]
 
     if not anuncios:
-        print("❌ No hay anuncios en la carpeta")
+        print("❌ No hay anuncios en la carpeta. Agrega anuncios desde el Gestor de Anuncios.")
         return None, None, [], []
 
     # Seleccionar anuncio según configuración

@@ -138,10 +138,19 @@ def main():
         print(f"\n\n{R}❌ Proceso cancelado por el usuario{X}\n")
         return
 
-    # Publicar en plataformas activas
+    # Leer secuencia configurada
+    secuencia_raw = config.get('secuencia_modulos', 'publicar_facebook')
+    secuencia = [m.strip() for m in secuencia_raw.split(',') if m.strip()]
+
+    print(f"\n{N}⚡ SECUENCIA CONFIGURADA:{X}")
+    for mod in secuencia:
+        print(f"   → {mod}")
+    print()
+
+    # Ejecutar módulos en orden
     resultados = {}
 
-    if config.get('modulo_facebook'):
+    if 'publicar_facebook' in secuencia:
         print(f"\n{N}{C}📘 Publicando en Facebook...{X}")
         from publicadores.publicador_facebook import PublicadorFacebook
         pub = PublicadorFacebook(config, es_full=es_full)
@@ -153,7 +162,16 @@ def main():
             gestor_reg.registrar_error('facebook', 'publicacion', 'Falló la publicación')
         pub.cerrar_navegador()
 
-    if config.get('modulo_instagram') and es_full:
+    if 'solicitudes_facebook' in secuencia and es_full:
+        print(f"\n{N}{C}👥 Enviando solicitudes de amistad — Facebook...{X}")
+        from publicadores.publicador_facebook import PublicadorFacebook
+        pub = PublicadorFacebook(config, es_full=es_full)
+        pub._iniciar_navegador()
+        pub.enviar_solicitudes_amistad()
+        pub.cerrar_navegador()
+        pub.cerrar_navegador()
+
+    if 'publicar_instagram' in secuencia and es_full:
         print(f"\n{N}{C}📸 Publicando en Instagram...{X}")
         from publicadores.publicador_instagram import PublicadorInstagram
         pub = PublicadorInstagram(config, es_full=es_full)
@@ -165,7 +183,15 @@ def main():
             gestor_reg.registrar_error('instagram', 'publicacion', 'Falló la publicación')
         pub.cerrar_navegador()
 
-    if config.get('modulo_twitter') and es_full:
+    if 'seguir_instagram' in secuencia and es_full:
+        print(f"\n{N}{C}👥 Siguiendo usuarios — Instagram...{X}")
+        from publicadores.publicador_instagram import PublicadorInstagram
+        pub = PublicadorInstagram(config, es_full=es_full)
+        pub._iniciar_navegador()
+        pub.seguir_usuarios()
+        pub.cerrar_navegador()
+
+    if 'publicar_twitter' in secuencia and es_full:
         print(f"\n{N}{C}🐦 Publicando en Twitter/X...{X}")
         from publicadores.publicador_twitter import PublicadorTwitter
         pub = PublicadorTwitter(config, es_full=es_full)
@@ -177,7 +203,15 @@ def main():
             gestor_reg.registrar_error('twitter', 'publicacion', 'Falló la publicación')
         pub.cerrar_navegador()
 
-    if config.get('modulo_linkedin') and es_full:
+    if 'seguir_twitter' in secuencia and es_full:
+        print(f"\n{N}{C}👥 Siguiendo usuarios — Twitter/X...{X}")
+        from publicadores.publicador_twitter import PublicadorTwitter
+        pub = PublicadorTwitter(config, es_full=es_full)
+        pub._iniciar_navegador()
+        pub.seguir_usuarios()
+        pub.cerrar_navegador()
+
+    if 'publicar_linkedin' in secuencia and es_full:
         print(f"\n{N}{C}💼 Publicando en LinkedIn...{X}")
         from publicadores.publicador_linkedin import PublicadorLinkedIn
         pub = PublicadorLinkedIn(config, es_full=es_full)
@@ -187,6 +221,14 @@ def main():
             gestor_reg.registrar_publicacion_exitosa('linkedin', 'anuncio', anuncio_dir)
         else:
             gestor_reg.registrar_error('linkedin', 'publicacion', 'Falló la publicación')
+        pub.cerrar_navegador()
+
+    if 'conexiones_linkedin' in secuencia and es_full:
+        print(f"\n{N}{C}👥 Enviando solicitudes de conexión — LinkedIn...{X}")
+        from publicadores.publicador_linkedin import PublicadorLinkedIn
+        pub = PublicadorLinkedIn(config, es_full=es_full)
+        pub._iniciar_navegador()
+        pub.enviar_solicitudes_conexion()
         pub.cerrar_navegador()
 
     # Resumen final

@@ -126,6 +126,15 @@ class ConfiguradorGUI:
                 self.config['MODULOS']['publicar_twitter'] = 'no'
                 self.config['MODULOS']['publicar_linkedin'] = 'no'
 
+            # [SECUENCIA]
+            if not self.config.has_section('SECUENCIA'):
+                self.config.add_section('SECUENCIA')
+            if hasattr(self, '_seq_vars') and hasattr(self, '_seq_orden'):
+                activos = [c for c in self._seq_orden if self._seq_vars.get(c, tk.BooleanVar(value=False)).get()]
+                if not activos:
+                    activos = ['publicar_facebook']
+                self.config['SECUENCIA']['modulos_activos'] = ','.join(activos)
+
             with open(self.archivo_config, 'w', encoding='utf-8') as f:
                 f.write("# ============================================================\n")
                 f.write("# CONFIGURACIÓN GLOBAL - PUBLICADOR REDES\n")
@@ -397,6 +406,91 @@ class ConfiguradorGUI:
                 fg="#856404",
                 justify='center'
             ).pack(padx=10)
+
+        # ==================== PESTAÑA SECUENCIA ====================
+        tab_seq = ttk.Frame(notebook)
+        notebook.add(tab_seq, text="⚡ Secuencia")
+
+        tk.Label(tab_seq,
+            text="Define qué acciones se ejecutan y en qué orden al usar Tareas Automáticas",
+            font=("Segoe UI", 9), bg="#f0f0f0", fg="#555", wraplength=560
+        ).pack(anchor='w', padx=20, pady=(10, 0))
+
+        if not self.es_full:
+            banner_seq = tk.Frame(tab_seq, bg="#fff3cd", pady=6)
+            banner_seq.pack(fill='x', padx=20, pady=(8, 0))
+            tk.Label(banner_seq,
+                text="🔒 Algunas acciones requieren versión Completa",
+                font=("Segoe UI", 9), bg="#fff3cd", fg="#856404"
+            ).pack(padx=10)
+
+        self._seccion(tab_seq, "📋 Acciones a ejecutar (activa/desactiva y ordena)")
+
+        frame_seq = tk.Frame(tab_seq, bg="#f0f0f0")
+        frame_seq.pack(fill='x', padx=20, pady=(0, 10))
+
+        modulos_disponibles = [
+            ("publicar_facebook",    "📘  Publicar en Facebook"),
+            ("solicitudes_facebook", "👥  Enviar Solicitudes de Amistad — Facebook"),
+            ("publicar_instagram",   "📸  Publicar en Instagram"),
+            ("seguir_instagram",     "👥  Seguir Usuarios — Instagram"),
+            ("publicar_twitter",     "🐦  Publicar en Twitter/X"),
+            ("seguir_twitter",       "👥  Seguir Usuarios — Twitter/X"),
+            ("publicar_linkedin",    "💼  Publicar en LinkedIn"),
+            ("conexiones_linkedin",  "👥  Solicitudes de Conexión — LinkedIn"),
+        ]
+
+        modulos_full = {
+            'solicitudes_facebook', 'publicar_instagram', 'seguir_instagram',
+            'publicar_twitter', 'seguir_twitter', 'publicar_linkedin', 'conexiones_linkedin'
+        }
+
+        seq_guardada = self._get('SECUENCIA', 'modulos_activos', 'publicar_facebook')
+        seq_activos = set(seq_guardada.split(','))
+        seq_lista = [m.strip() for m in seq_guardada.split(',') if m.strip()]
+        for clave, _ in modulos_disponibles:
+            if clave not in seq_lista:
+                seq_lista.append(clave)
+
+        self._seq_vars = {}
+        self._seq_orden = list(seq_lista)
+        self._seq_container = tk.Frame(frame_seq, bg="#f0f0f0")
+        self._seq_container.pack(fill='x')
+
+        mods_dict = dict(modulos_disponibles)
+
+        def _render_seq():
+            for w in self._seq_container.winfo_children():
+                w.destroy()
+            for idx, clave in enumerate(self._seq_orden):
+                if clave not in mods_dict:
+                    continue
+                label = mods_dict[clave]
+                es_full_mod = clave not in modulos_full or self.es_full
+                fila = tk.Frame(self._seq_container, bg="#ffffff", relief='solid', borderwidth=1)
+                fila.pack(fill='x', pady=2)
+                if clave not in self._seq_vars:
+                    self._seq_vars[clave] = tk.BooleanVar(value=clave in seq_activos)
+                texto_label = label if es_full_mod else f"{label}  🔒"
+                tk.Checkbutton(fila, text=texto_label, variable=self._seq_vars[clave],
+                    font=("Segoe UI", 10), bg="#ffffff", anchor='w',
+                    state='normal' if es_full_mod else 'disabled'
+                ).pack(side='left', padx=8, pady=4, fill='x', expand=True)
+                btn_frame = tk.Frame(fila, bg="#ffffff")
+                btn_frame.pack(side='right', padx=4)
+                def _subir(i=idx):
+                    if i > 0:
+                        self._seq_orden[i], self._seq_orden[i-1] = self._seq_orden[i-1], self._seq_orden[i]
+                        _render_seq()
+                def _bajar(i=idx):
+                    if i < len(self._seq_orden) - 1:
+                        self._seq_orden[i], self._seq_orden[i+1] = self._seq_orden[i+1], self._seq_orden[i]
+                        _render_seq()
+                tk.Button(btn_frame, text="↑", font=("Segoe UI", 8), width=2, command=_subir).pack(side='left', padx=1)
+                tk.Button(btn_frame, text="↓", font=("Segoe UI", 8), width=2, command=_bajar).pack(side='left', padx=1)
+
+        self._render_seq = _render_seq
+        _render_seq()
 
         # ==================== BOTÓN GUARDAR ====================
         frame_guardar = tk.Frame(self.root, bg="#f0f0f0", pady=10)

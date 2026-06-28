@@ -317,57 +317,163 @@ class PanelControl:
                  font=("Segoe UI", 9), bg="#e65100", fg="white").pack()
 
         frame = tk.Frame(ventana, bg="#f0f0f0")
+        frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        def _cerrar_y(comando):
+            ventana.grab_release()
+            ventana.destroy()
+            comando()
+
+        # Botón 1 — Ejecutar Secuencia
+        tk.Button(frame,
+            text="⚡  Ejecutar Secuencia Configurada",
+            font=("Segoe UI", 12, "bold"),
+            bg="#e65100", fg="white",
+            cursor="hand2", anchor='w', padx=20, pady=12,
+            command=lambda: _cerrar_y(self._ejecutar_secuencia)
+        ).pack(fill='x', pady=(0, 8))
+        tk.Label(frame, text="Corre todos los módulos activados en el Configurador → Secuencia",
+                 font=("Segoe UI", 8), fg="gray", bg="#f0f0f0").pack(anchor='w', pady=(0, 15))
+
+        tk.Frame(frame, bg="#e0e0e0", height=1).pack(fill='x', pady=(0, 15))
+
+        # Botón 2 — Publicar
+        tk.Button(frame,
+            text="📢  Publicar",
+            font=("Segoe UI", 12, "bold"),
+            bg="#1877f2", fg="white",
+            cursor="hand2", anchor='w', padx=20, pady=12,
+            command=lambda: _cerrar_y(lambda: self._abrir_submenu_publicar(es_full))
+        ).pack(fill='x', pady=(0, 8))
+        tk.Label(frame, text="Publica un anuncio en Facebook, Instagram, Twitter/X o LinkedIn",
+                 font=("Segoe UI", 8), fg="gray", bg="#f0f0f0").pack(anchor='w', pady=(0, 15))
+
+        tk.Frame(frame, bg="#e0e0e0", height=1).pack(fill='x', pady=(0, 15))
+
+        # Botón 3 — Contactos
+        btn_contactos_color = "#7c3aed" if es_full else "#e0e0e0"
+        btn_contactos_fg = "white" if es_full else "#9e9e9e"
+        tk.Button(frame,
+            text="👥  Contactos" if es_full else "🔒  Contactos  —  versión Completa",
+            font=("Segoe UI", 12, "bold") if es_full else ("Segoe UI", 12),
+            bg=btn_contactos_color, fg=btn_contactos_fg,
+            cursor="hand2", anchor='w', padx=20, pady=12,
+            command=lambda: _cerrar_y(lambda: self._abrir_submenu_contactos(es_full)) if es_full else self._mostrar_mensaje_upgrade
+        ).pack(fill='x', pady=(0, 8))
+        tk.Label(frame, text="Envía solicitudes de amistad o sigue usuarios en redes sociales",
+                 font=("Segoe UI", 8), fg="gray", bg="#f0f0f0").pack(anchor='w', pady=(0, 15))
+
+        tk.Button(frame, text="Cancelar", font=("Segoe UI", 10),
+                  bg="#6c757d", fg="white", width=12,
+                  command=lambda: [ventana.grab_release(), ventana.destroy()]
+                  ).pack(pady=(5, 0))
+
+        ventana.protocol("WM_DELETE_WINDOW",
+                         lambda: [ventana.grab_release(), ventana.destroy()])
+        self._centrar_ventana(ventana, 460, 480)
+        ventana.deiconify()
+
+    def _abrir_submenu_publicar(self, es_full):
+        """Submenú de publicación por red social"""
+        ventana = tk.Toplevel(self.root)
+        ventana.withdraw()
+        ventana.title("📢 Publicar")
+        ventana.resizable(False, False)
+        ventana.configure(bg="#f0f0f0")
+        ventana.transient(self.root)
+        ventana.grab_set()
+
+        header = tk.Frame(ventana, bg="#1877f2", pady=12)
+        header.pack(fill='x')
+        tk.Label(header, text="📢 Publicar",
+                 font=("Segoe UI", 13, "bold"), bg="#1877f2", fg="white").pack()
+
+        frame = tk.Frame(ventana, bg="#f0f0f0")
         frame.pack(fill='both', expand=True, padx=20, pady=15)
 
-        def _boton_accion(texto, color, comando, activo=True):
-            def _ejecutar():
-                ventana.grab_release()
-                ventana.destroy()
-                comando()
-            tk.Button(
-                frame,
+        def _cerrar_y(cmd):
+            ventana.grab_release()
+            ventana.destroy()
+            cmd()
+
+        def _boton(texto, color, cmd, activo=True):
+            tk.Button(frame,
                 text=texto if activo else f"🔒  {texto[2:].strip()}  —  versión Completa",
                 font=("Segoe UI", 11, "bold") if activo else ("Segoe UI", 10),
                 bg=color if activo else "#e0e0e0",
                 fg="white" if activo else "#9e9e9e",
                 cursor="hand2", anchor='w', padx=15, pady=8,
-                command=_ejecutar if activo else self._mostrar_mensaje_upgrade
+                command=lambda: _cerrar_y(cmd) if activo else self._mostrar_mensaje_upgrade
             ).pack(fill='x', pady=(0, 6))
 
-        _boton_accion("📘  Publicar en Facebook", "#1877f2", self._publicar_facebook)
-        _boton_accion("👥  Enviar Solicitudes de Amistad — Facebook",
-                      "#1877f2", self._solicitudes_facebook, activo=es_full)
+        _boton("📘  Facebook", "#1877f2", self._publicar_facebook)
+        _boton("📸  Instagram", "#e1306c", self._publicar_instagram, activo=es_full)
+        _boton("🐦  Twitter/X", "#1da1f2", self._publicar_twitter, activo=es_full)
+        _boton("💼  LinkedIn", "#0077b5", self._publicar_linkedin, activo=es_full)
 
-        tk.Frame(frame, bg="#e0e0e0", height=1).pack(fill='x', pady=(4, 10))
-
-        _boton_accion("📸  Publicar en Instagram", "#e1306c",
-                      self._publicar_instagram, activo=es_full)
-        _boton_accion("👥  Seguir Usuarios — Instagram", "#e1306c",
-                      self._seguir_instagram, activo=es_full)
-
-        tk.Frame(frame, bg="#e0e0e0", height=1).pack(fill='x', pady=(4, 10))
-
-        _boton_accion("🐦  Publicar en Twitter/X", "#1da1f2",
-                      self._publicar_twitter, activo=es_full)
-        _boton_accion("👥  Seguir Usuarios — Twitter/X", "#1da1f2",
-                      self._seguir_twitter, activo=es_full)
-
-        tk.Frame(frame, bg="#e0e0e0", height=1).pack(fill='x', pady=(4, 10))
-
-        _boton_accion("💼  Publicar en LinkedIn", "#0077b5",
-                      self._publicar_linkedin, activo=es_full)
-        _boton_accion("👥  Enviar Solicitudes de Conexión — LinkedIn", "#0077b5",
-                      self._conexiones_linkedin, activo=es_full)
-
-        tk.Button(frame, text="Cancelar", font=("Segoe UI", 10),
+        tk.Button(frame, text="← Volver", font=("Segoe UI", 10),
                   bg="#6c757d", fg="white", width=12,
-                  command=lambda: [ventana.grab_release(), ventana.destroy()]
+                  command=lambda: [ventana.grab_release(), ventana.destroy(),
+                                   self._abrir_acciones()]
                   ).pack(pady=(10, 0))
 
         ventana.protocol("WM_DELETE_WINDOW",
                          lambda: [ventana.grab_release(), ventana.destroy()])
-        self._centrar_ventana(ventana, 520, 620)
+        self._centrar_ventana(ventana, 400, 340)
         ventana.deiconify()
+
+    def _abrir_submenu_contactos(self, es_full):
+        """Submenú de contactos por red social"""
+        ventana = tk.Toplevel(self.root)
+        ventana.withdraw()
+        ventana.title("👥 Contactos")
+        ventana.resizable(False, False)
+        ventana.configure(bg="#f0f0f0")
+        ventana.transient(self.root)
+        ventana.grab_set()
+
+        header = tk.Frame(ventana, bg="#7c3aed", pady=12)
+        header.pack(fill='x')
+        tk.Label(header, text="👥 Contactos",
+                 font=("Segoe UI", 13, "bold"), bg="#7c3aed", fg="white").pack()
+
+        frame = tk.Frame(ventana, bg="#f0f0f0")
+        frame.pack(fill='both', expand=True, padx=20, pady=15)
+
+        def _cerrar_y(cmd):
+            ventana.grab_release()
+            ventana.destroy()
+            cmd()
+
+        def _boton(texto, color, cmd):
+            tk.Button(frame,
+                text=texto,
+                font=("Segoe UI", 11, "bold"),
+                bg=color, fg="white",
+                cursor="hand2", anchor='w', padx=15, pady=8,
+                command=lambda: _cerrar_y(cmd)
+            ).pack(fill='x', pady=(0, 6))
+
+        _boton("📘  Solicitudes de Amistad — Facebook", "#1877f2", self._solicitudes_facebook)
+        _boton("📸  Seguir Usuarios — Instagram", "#e1306c", self._seguir_instagram)
+        _boton("🐦  Seguir Usuarios — Twitter/X", "#1da1f2", self._seguir_twitter)
+        _boton("💼  Solicitudes de Conexión — LinkedIn", "#0077b5", self._conexiones_linkedin)
+
+        tk.Button(frame, text="← Volver", font=("Segoe UI", 10),
+                  bg="#6c757d", fg="white", width=12,
+                  command=lambda: [ventana.grab_release(), ventana.destroy(),
+                                   self._abrir_acciones()]
+                  ).pack(pady=(10, 0))
+
+        ventana.protocol("WM_DELETE_WINDOW",
+                         lambda: [ventana.grab_release(), ventana.destroy()])
+        self._centrar_ventana(ventana, 400, 340)
+        ventana.deiconify()
+
+    def _ejecutar_secuencia(self):
+        """Ejecuta la secuencia completa configurada"""
+        self._lanzar_exe()
+        self._toast("⚡ Secuencia iniciada", "Ejecutando módulos configurados...")
 
     # ==================== MÉTODOS DE ACCIÓN ====================
 

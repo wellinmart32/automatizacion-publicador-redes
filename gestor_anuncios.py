@@ -381,7 +381,7 @@ class GestorAnuncios:
         anuncios = sorted([
             d for d in os.listdir(self.carpeta_anuncios)
             if os.path.isdir(os.path.join(self.carpeta_anuncios, d))
-            and d.startswith('anuncio_')
+            and os.path.exists(os.path.join(self.carpeta_anuncios, d, 'datos.txt'))
         ])
 
         for anuncio in anuncios:
